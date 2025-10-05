@@ -131,10 +131,8 @@ export const useDataStore = create<GlobalDataState>((set, get) => ({
       setLoading(true); setError(null);
       const { pyodideContext } = await import('../pyodideClient');
       await pyodideContext.ready;
-      // Reusar parse_csv definido en Python sin necesidad de fetch
-      (pyodideContext as any)._pyodide?.globals.set?.('___csv_text_direct', csvText);
-      const rows = await (pyodideContext as any)._pyodide.runPythonAsync('parse_csv(___csv_text_direct)');
-      const jsRows = rows.toJs ? rows.toJs({}) : rows;
+      // Usar nueva función segura (soporta comentarios #)
+      const jsRows = await pyodideContext.parseCSVText(csvText);
       setRawRows(jsRows);
       const analysis = pyodideContext.analyzeData(jsRows) as DataStats;
       setStats(analysis);
