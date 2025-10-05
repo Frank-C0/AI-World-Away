@@ -8,6 +8,7 @@ export interface PyodideContext {
   analyzeData: (rows: any[]) => any;
   parseCSVText: (text: string) => Promise<any[]>;
   writeCSVAndParse: (fileName: string, text: string) => Promise<any[]>;
+  generateCorrelationPlot: (rows: any[], method?: string) => Promise<string>;
 }
 
 let _pyodide: any; // instancia pyodide
@@ -16,6 +17,8 @@ let _ready: Promise<void> | null = null;
 // Código Python reducido: sólo pandas (requiere que pandas se haya cargado correctamente)
 const PY_HELPERS = `
 import io, math, pandas as pd
+import base64
+from js import console
 
 def parse_csv(text: str):
     df = pd.read_csv(io.StringIO(text), comment='#')
@@ -50,6 +53,55 @@ def analyze(rows):
             'nullCount': int(s.isna().sum()),
         })
     return {'shape': [len(df), len(df.columns)], 'columns': col_meta, 'totalNulls': total_nulls}
+
+def generate_correlation_plot(rows, method='pearson'):
+    """
+    Genera un gráfico de correlación usando seaborn y lo devuelve como una imagen base64
+    methods: 'pearson', 'kendall', 'spearman'
+    """
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import io
+    
+    # Crear DataFrame y filtrar solo columnas numéricas
+    df = pd.DataFrame(rows)
+    numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+    
+    if len(numeric_cols) < 2:
+        return "error: Se requieren al menos 2 columnas numéricas para calcular correlaciones"
+    
+    # Calcular matriz de correlación
+    corr_df = df[numeric_cols].corr(method=method)
+    
+    # Crear figura
+    plt.figure(figsize=(10, 8))
+    mask = None
+    
+    # Generar gráfico de correlación con seaborn
+    sns.heatmap(
+        corr_df, 
+        annot=True, 
+        mask=mask,
+        cmap='coolwarm', 
+        vmin=-1, 
+        vmax=1, 
+        center=0,
+        square=True, 
+        linewidths=.5, 
+        cbar_kws={"shrink": .8},
+        fmt=".2f"
+    )
+    plt.title(f'Matriz de Correlación ({method.capitalize()})')
+    plt.tight_layout()
+    
+    # Convertir a base64 para retornar al cliente
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', dpi=100)
+    buf.seek(0)
+    img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    plt.close()
+    
+    return f"data:image/png;base64,{img_base64}"
 `;
 
 export function initPyodide(): PyodideContext & { _pyodide?: any } {
@@ -57,9 +109,9 @@ export function initPyodide(): PyodideContext & { _pyodide?: any } {
     _ready = (async () => {
       // @ts-ignore global loadPyodide cargado en index.html
       _pyodide = await (window as any).loadPyodide({
-        indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/'
+        indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.28.3/full/'
       });
-      await _pyodide.loadPackage(['pandas']);
+      await _pyodide.loadPackage(['pandas', 'matplotlib', 'seaborn']);
       await _pyodide.runPythonAsync(PY_HELPERS);
     })();
   }
@@ -103,8 +155,22 @@ export function initPyodide(): PyodideContext & { _pyodide?: any } {
     const result = _pyodide.runPython(`analyze(___rows)`);
     return result.toJs ? result.toJs({}) : result;
   };
+  
+  const generateCorrelationPlot = async (rows: any[], method: string = 'pearson'): Promise<string> => {
+    await _ready;
+    if (!_pyodide) throw new Error('Pyodide no inicializado');
+    _pyodide.globals.set('___correlation_rows', rows);
+    _pyodide.globals.set('___correlation_method', method);
+    try {
+      const result = await _pyodide.runPythonAsync(`generate_correlation_plot(___correlation_rows, ___correlation_method)`);
+      return result;
+    } catch (error) {
+      console.error('Error generando gráfico de correlación:', error);
+      throw new Error(`Error generando gráfico de correlación: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
+  };
 
-  return { ready: _ready, runPython, loadCSV, analyzeData, parseCSVText, writeCSVAndParse, _pyodide } as any;
+  return { ready: _ready, runPython, loadCSV, analyzeData, parseCSVText, writeCSVAndParse, generateCorrelationPlot, _pyodide } as any;
 }
 
 export const pyodideContext = initPyodide();

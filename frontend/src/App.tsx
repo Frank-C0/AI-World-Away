@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import './App.css';
 
 import Transition from './Components/IntroAnimation/Transition';
@@ -6,6 +6,7 @@ import Interfaz from './Components/ThreeD/Interfaz';
 import Tables from './Components/Tables/Tables';
 import Graficos from './Components/Charts/Graficos';
 import DataStatsModal from './Components/Tables/DataStatsModal';
+import CorrelationModal from './Components/Charts/CorrelationModal';
 import Modal from './Components/Common/Modal';
 import { useUIStore } from './store/uiStore';
 import { useDataStore } from './store/dataStore';
@@ -50,6 +51,9 @@ function App() {
           <button onClick={() => toggleModal('charts')} className={activeModal === 'charts' ? 'active' : ''}>
             {activeModal === 'charts' ? '✕ Gráficos' : '📈 Gráficos'}
           </button>
+          <button onClick={() => toggleModal('correlation')} className={activeModal === 'correlation' ? 'active' : ''} disabled={!stats}>
+            {activeModal === 'correlation' ? '✕ Correlación' : '🔄 Correlación'}
+          </button>
           <button onClick={() => toggleModal('stats')} className={activeModal === 'stats' ? 'active' : ''} disabled={!stats}>
             {activeModal === 'stats' ? '✕ Stats' : '📑 Stats'}
           </button>
@@ -64,6 +68,10 @@ function App() {
       {/* ✅ PANEL: Gráficos */}
       <Modal id="charts" title="📈 Gráficos" widthClass="w-[820px]" heightClass="h-[560px]">
         <Graficos />
+      </Modal>
+      
+      <Modal id="correlation" title="🔄 Matriz de Correlación" widthClass="w-[900px]" heightClass="h-[640px]">
+        <CorrelationModal embedded />
       </Modal>
 
       <Modal id="stats" title="📑 Estadísticas del Dataset" widthClass="w-[1000px]" heightClass="max-h-[80vh]">

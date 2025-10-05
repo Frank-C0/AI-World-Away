@@ -1,8 +1,9 @@
 import React from 'react';
 import { useUIStore } from '../../store/uiStore';
+import type { ActiveModal } from '../../store/uiStore';
 
 interface ModalProps {
-  id: 'tables' | 'charts' | 'stats' | 'data';
+  id: Exclude<ActiveModal, null>;
   title: string;
   children: React.ReactNode;
   widthClass?: string; // Tailwind width override
