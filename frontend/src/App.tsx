@@ -9,7 +9,8 @@ import {
   type ColumnDef,
   type FilterFn,
 } from '@tanstack/react-table';
-import * as dfd from 'danfojs';
+// Sustituimos Danfo.js por un pipeline ligero con Pyodide
+import { pyodideContext } from './pyodideClient';
 
 // Tipos
 interface DataRow {
@@ -94,7 +95,8 @@ const SelectFilter = ({ column, options }: any) => {
 
 const App: React.FC = () => {
   const [data, setData] = useState<DataRow[]>([]);
-  const [df, setDf] = useState<dfd.DataFrame | null>(null);
+  // Ya no usamos DataFrame de Danfo, pero mantenemos referencia para compatibilidad futura
+  const [rawRows, setRawRows] = useState<DataRow[] | null>(null);
   const [stats, setStats] = useState<DataStats | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,18 +106,12 @@ const App: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-
-      // Cargar CSV usando Danfo.js
-      const loadedDf = await dfd.readCSV(csvUrl);
-      setDf(loadedDf);
-
-      // Analizar datos
-      const analysis = analyzeData(loadedDf);
+      await pyodideContext.ready;
+      const rows = await pyodideContext.loadCSV(csvUrl);
+      setRawRows(rows);
+      const analysis = pyodideContext.analyzeData(rows) as DataStats;
       setStats(analysis);
-
-      // Convertir a array de objetos para la tabla
-      const dataArray = convertDfToArray(loadedDf);
-      setData(dataArray);
+      setData(rows);
 
     } catch (err) {
       console.error('Error loading CSV:', err);
@@ -130,85 +126,11 @@ const App: React.FC = () => {
   };
 
   // Analizar el DataFrame para obtener estadísticas
-  const analyzeData = (dataframe: dfd.DataFrame): DataStats => {
-    const shape = dataframe.shape;
-    const columns: ColumnAnalysis[] = [];
-
-    dataframe.columns.forEach((colName: string) => {
-      const series = dataframe[colName];
-      const values = series.values;
-      const dtype = series.dtype;
-      
-      // Filtrar valores nulos o undefined
-      const nonNullValues = values.filter((v: any) => 
-        v !== null && v !== undefined && !(typeof v === 'number' && isNaN(v))
-      );
-      
-      const nullCount = values.length - nonNullValues.length;
-      const uniqueValues = ([...new Set(nonNullValues.map((v: any) => String(v)))] as string[]).sort();
-      
-      const isNumeric = dtype === 'int32' || dtype === 'float32' || dtype === 'number';
-      const isCategorical = !isNumeric && uniqueValues.length <= 20; // Considerar categórico si tiene hasta 20 valores únicos
-      
-      let min: number | undefined;
-      let max: number | undefined;
-
-      if (isNumeric && nonNullValues.length > 0) {
-        const numericValues = nonNullValues.map((v: any) => Number(v)).filter((v: number) => !isNaN(v));
-        if (numericValues.length > 0) {
-          min = Math.min(...numericValues);
-          max = Math.max(...numericValues);
-        }
-      }
-
-      columns.push({
-        name: colName,
-        dtype,
-        isNumeric,
-        isCategorical,
-        uniqueValues,
-        min,
-        max,
-        nullCount
-      });
-    });
-
-    const totalNulls = columns.reduce((sum, col) => sum + col.nullCount, 0);
-
-    return {
-      shape,
-      columns,
-      totalNulls
-    };
-  };
+  // analyzeData ahora lo realiza Python; este bloque se mantiene sólo si hubiera fallback JS
+  // const analyzeData = (dataframe: any): DataStats => { return { shape:[0,0], columns:[], totalNulls:0 }; };
 
   // Convertir DataFrame a array de objetos
-  const convertDfToArray = (dataframe: dfd.DataFrame): DataRow[] => {
-    try {
-      // Intentar usar toJSON si está disponible
-      const jsonData = (dataframe as any).toJSON({ format: 'row' });
-      if (Array.isArray(jsonData)) {
-        return jsonData;
-      }
-    } catch (err) {
-      console.warn('toJSON method not available, using manual conversion');
-    }
-
-    // Conversión manual
-    const columns = dataframe.columns;
-    const values = (dataframe as any).values as any[][];
-    const result: DataRow[] = [];
-
-    for (let i = 0; i < values.length; i++) {
-      const row: DataRow = {};
-      columns.forEach((col: string, j: number) => {
-        row[col] = values[i][j];
-      });
-      result.push(row);
-    }
-
-    return result;
-  };
+  // convertDfToArray ya no es necesario con Pyodide (los rows llegan como objetos)
 
   // Generar datos de ejemplo
   const generateSampleData = (): DataRow[] => {
@@ -333,7 +255,7 @@ const App: React.FC = () => {
           📊 Tabla Dinámica con Análisis de Datos
         </h1>
         <p className="text-sm text-gray-600 mt-1 mb-6 text-center">
-          Datos cargados desde CSV y analizados automáticamente con Danfo.js
+          Datos cargados desde CSV y analizados automáticamente con Pyodide (Python)
         </p>
 
         {error && (

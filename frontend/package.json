@@ -13,12 +13,12 @@
     "@tailwindcss/vite": "^4.1.14",
     "@tanstack/react-table": "^8.21.3",
     "@types/tabulator-tables": "^6.2.11",
-    "danfojs": "^1.2.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-tabulator": "^0.21.0",
     "tabulator-tables": "^6.3.1",
-    "tailwindcss": "^4.1.14"
+    "tailwindcss": "^4.1.14",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
