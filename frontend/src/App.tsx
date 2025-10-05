@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -9,16 +9,28 @@ import {
   type ColumnDef,
   type FilterFn,
 } from '@tanstack/react-table';
+import * as dfd from 'danfojs';
 
 // Tipos
 interface DataRow {
-  id: number;
-  nombre: string;
-  edad: number;
-  salario: number;
-  ciudad: string;
-  categoria: string;
-  activo: boolean;
+  [key: string]: any;
+}
+
+interface ColumnAnalysis {
+  name: string;
+  dtype: string;
+  isNumeric: boolean;
+  isCategorical: boolean;
+  uniqueValues: string[];
+  min?: number;
+  max?: number;
+  nullCount: number;
+}
+
+interface DataStats {
+  shape: number[];
+  columns: ColumnAnalysis[];
+  totalNulls: number;
 }
 
 // Filtro personalizado para rangos numéricos
@@ -80,90 +92,203 @@ const SelectFilter = ({ column, options }: any) => {
   );
 };
 
-// Datos de prueba ya limpios
-const DATA: DataRow[] = [
-  { id: 1, nombre: 'Ana', edad: 45, salario: 5500, ciudad: 'Lima', categoria: 'A', activo: true },
-  { id: 2, nombre: 'Juan', edad: 28, salario: 3200, ciudad: 'Arequipa', categoria: 'B', activo: true },
-  { id: 3, nombre: 'María', edad: 35, salario: 4100, ciudad: 'Cusco', categoria: 'C', activo: false },
-  { id: 4, nombre: 'Pedro', edad: 50, salario: 6000, ciudad: 'Trujillo', categoria: 'A', activo: true },
-  { id: 5, nombre: 'Lucía', edad: 25, salario: 2800, ciudad: 'Lima', categoria: 'B', activo: true },
-  { id: 6, nombre: 'Carlos', edad: 38, salario: 4900, ciudad: 'Arequipa', categoria: 'C', activo: false },
-  { id: 7, nombre: 'Elena', edad: 42, salario: 5200, ciudad: 'Cusco', categoria: 'A', activo: true },
-  { id: 8, nombre: 'Diego', edad: 22, salario: 2500, ciudad: 'Trujillo', categoria: 'B', activo: true },
-  { id: 9, nombre: 'Sofía', edad: 30, salario: 3800, ciudad: 'Lima', categoria: 'C', activo: true },
-  { id: 10, nombre: 'Miguel', edad: 47, salario: 5800, ciudad: 'Arequipa', categoria: 'A', activo: false },
-  { id: 11, nombre: 'Sofía', edad: 30, salario: 3800, ciudad: 'Lima', categoria: 'C', activo: true },
-  { id: 12, nombre: 'Lucía', edad: 25, salario: 2800, ciudad: 'Lima', categoria: 'B', activo: true },
-  { id: 13, nombre: 'Ana', edad: 45, salario: 5500, ciudad: 'Lima', categoria: 'A', activo: true },
-  { id: 14, nombre: 'Carlos', edad: 38, salario: 4900, ciudad: 'Arequipa', categoria: 'C', activo: false },
-  { id: 15, nombre: 'Diego', edad: 22, salario: 2500, ciudad: 'Trujillo', categoria: 'B', activo: true },
-];
-
 const App: React.FC = () => {
-  const [data] = useState<DataRow[]>(DATA);
+  const [data, setData] = useState<DataRow[]>([]);
+  const [df, setDf] = useState<dfd.DataFrame | null>(null);
+  const [stats, setStats] = useState<DataStats | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Obtener valores únicos para filtros categóricos
-  const getUniqueValues = (key: keyof DataRow): string[] => {
-    return [...new Set(data.map((row) => String(row[key])))].sort();
+  // Cargar y procesar datos desde CSV
+  const loadDataFromCSV = async (csvUrl: string = './final_data.csv') => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Cargar CSV usando Danfo.js
+      const loadedDf = await dfd.readCSV(csvUrl);
+      setDf(loadedDf);
+
+      // Analizar datos
+      const analysis = analyzeData(loadedDf);
+      setStats(analysis);
+
+      // Convertir a array de objetos para la tabla
+      const dataArray = convertDfToArray(loadedDf);
+      setData(dataArray);
+
+    } catch (err) {
+      console.error('Error loading CSV:', err);
+      setError(`Error al cargar el archivo CSV: ${err instanceof Error ? err.message : 'Error desconocido'}`);
+      
+      // Datos de ejemplo en caso de error
+      const sampleData = generateSampleData();
+      setData(sampleData);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Obtener min/max para filtros numéricos
-  const getMinMax = (key: keyof DataRow): [number, number] => {
-    const values = data.map((row) => row[key] as number);
-    return [Math.min(...values), Math.max(...values)];
+  // Analizar el DataFrame para obtener estadísticas
+  const analyzeData = (dataframe: dfd.DataFrame): DataStats => {
+    const shape = dataframe.shape;
+    const columns: ColumnAnalysis[] = [];
+
+    dataframe.columns.forEach((colName: string) => {
+      const series = dataframe[colName];
+      const values = series.values;
+      const dtype = series.dtype;
+      
+      // Filtrar valores nulos o undefined
+      const nonNullValues = values.filter((v: any) => 
+        v !== null && v !== undefined && !(typeof v === 'number' && isNaN(v))
+      );
+      
+      const nullCount = values.length - nonNullValues.length;
+      const uniqueValues = ([...new Set(nonNullValues.map((v: any) => String(v)))] as string[]).sort();
+      
+      const isNumeric = dtype === 'int32' || dtype === 'float32' || dtype === 'number';
+      const isCategorical = !isNumeric && uniqueValues.length <= 20; // Considerar categórico si tiene hasta 20 valores únicos
+      
+      let min: number | undefined;
+      let max: number | undefined;
+
+      if (isNumeric && nonNullValues.length > 0) {
+        const numericValues = nonNullValues.map((v: any) => Number(v)).filter((v: number) => !isNaN(v));
+        if (numericValues.length > 0) {
+          min = Math.min(...numericValues);
+          max = Math.max(...numericValues);
+        }
+      }
+
+      columns.push({
+        name: colName,
+        dtype,
+        isNumeric,
+        isCategorical,
+        uniqueValues,
+        min,
+        max,
+        nullCount
+      });
+    });
+
+    const totalNulls = columns.reduce((sum, col) => sum + col.nullCount, 0);
+
+    return {
+      shape,
+      columns,
+      totalNulls
+    };
   };
 
-  // Definir columnas de TanStack Table
-  const columns = useMemo<ColumnDef<DataRow>[]>(() => {
-    const [minEdad, maxEdad] = getMinMax('edad');
-    const [minSalario, maxSalario] = getMinMax('salario');
+  // Convertir DataFrame a array de objetos
+  const convertDfToArray = (dataframe: dfd.DataFrame): DataRow[] => {
+    try {
+      // Intentar usar toJSON si está disponible
+      const jsonData = (dataframe as any).toJSON({ format: 'row' });
+      if (Array.isArray(jsonData)) {
+        return jsonData;
+      }
+    } catch (err) {
+      console.warn('toJSON method not available, using manual conversion');
+    }
 
+    // Conversión manual
+    const columns = dataframe.columns;
+    const values = (dataframe as any).values as any[][];
+    const result: DataRow[] = [];
+
+    for (let i = 0; i < values.length; i++) {
+      const row: DataRow = {};
+      columns.forEach((col: string, j: number) => {
+        row[col] = values[i][j];
+      });
+      result.push(row);
+    }
+
+    return result;
+  };
+
+  // Generar datos de ejemplo
+  const generateSampleData = (): DataRow[] => {
     return [
-      {
-        accessorKey: 'id',
-        header: 'ID',
-        size: 60,
-      },
-      {
-        accessorKey: 'nombre',
-        header: 'Nombre',
-        filterFn: 'includesString',
-        cell: (info) => info.getValue(),
-      },
-      {
-        accessorKey: 'edad',
-        header: 'Edad',
-        filterFn: numberRangeFilter,
-        meta: { min: minEdad, max: maxEdad },
-      },
-      {
-        accessorKey: 'salario',
-        header: 'Salario',
-        filterFn: numberRangeFilter,
-        cell: (info) => `S/ ${(info.getValue() as number).toLocaleString()}`,
-        meta: { min: minSalario, max: maxSalario },
-      },
-      {
-        accessorKey: 'ciudad',
-        header: 'Ciudad',
-        filterFn: 'equals',
-        meta: { options: getUniqueValues('ciudad') },
-      },
-      {
-        accessorKey: 'categoria',
-        header: 'Categoría',
-        filterFn: 'equals',
-        meta: { options: getUniqueValues('categoria') },
-      },
-      {
-        accessorKey: 'activo',
-        header: 'Activo',
-        cell: (info) => (info.getValue() ? '✅' : '❌'),
-        filterFn: 'equals',
-        meta: { options: ['true', 'false'] },
-      },
+      { id: 1, nombre: 'Ana', edad: 45, salario: 5500, ciudad: 'Lima', categoria: 'A', activo: true },
+      { id: 2, nombre: 'Juan', edad: 28, salario: 3200, ciudad: 'Arequipa', categoria: 'B', activo: true },
+      { id: 3, nombre: 'María', edad: 35, salario: 4100, ciudad: 'Cusco', categoria: 'C', activo: false },
+      { id: 4, nombre: 'Pedro', edad: 50, salario: 6000, ciudad: 'Trujillo', categoria: 'A', activo: true },
+      { id: 5, nombre: 'Lucía', edad: 25, salario: 2800, ciudad: 'Lima', categoria: 'B', activo: true },
+      { id: 6, nombre: 'Carlos', edad: 38, salario: 4900, ciudad: 'Arequipa', categoria: 'C', activo: false },
+      { id: 7, nombre: 'Elena', edad: 42, salario: 5200, ciudad: 'Cusco', categoria: 'A', activo: true },
+      { id: 8, nombre: 'Diego', edad: 22, salario: 2500, ciudad: 'Trujillo', categoria: 'B', activo: true },
+      { id: 9, nombre: 'Sofía', edad: 30, salario: 3800, ciudad: 'Lima', categoria: 'C', activo: true },
+      { id: 10, nombre: 'Miguel', edad: 47, salario: 5800, ciudad: 'Arequipa', categoria: 'A', activo: false },
     ];
-  }, [data]);
+  };
+
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    loadDataFromCSV();
+  }, []);
+
+  // Definir columnas de TanStack Table dinámicamente basado en el análisis
+  const columns = useMemo<ColumnDef<DataRow>[]>(() => {
+    if (!stats) return [];
+
+    return stats.columns.map((colAnalysis) => {
+      const baseColumn: ColumnDef<DataRow> = {
+        accessorKey: colAnalysis.name,
+        header: colAnalysis.name,
+        cell: (info) => {
+          const value = info.getValue();
+          if (value === null || value === undefined) {
+            return <span className="text-gray-400">N/A</span>;
+          }
+          
+          // Formatear números
+          if (colAnalysis.isNumeric && typeof value === 'number') {
+            return value.toLocaleString();
+          }
+          
+          // Formatear booleanos
+          if (typeof value === 'boolean') {
+            return value ? '✅' : '❌';
+          }
+          
+          return String(value);
+        },
+      };
+
+      // Configurar filtros basado en el tipo de columna
+      if (colAnalysis.isNumeric) {
+        return {
+          ...baseColumn,
+          filterFn: numberRangeFilter,
+          meta: { 
+            min: colAnalysis.min, 
+            max: colAnalysis.max,
+            isNumeric: true 
+          },
+        };
+      } else if (colAnalysis.isCategorical) {
+        return {
+          ...baseColumn,
+          filterFn: 'equals',
+          meta: { 
+            options: colAnalysis.uniqueValues,
+            isCategorical: true 
+          },
+        };
+      } else {
+        // Para columnas de texto generales
+        return {
+          ...baseColumn,
+          filterFn: 'includesString',
+          meta: { isText: true },
+        };
+      }
+    });
+  }, [stats]);
 
   // Configurar tabla
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({});
@@ -186,15 +311,89 @@ const App: React.FC = () => {
     table.resetColumnFilters();
   };
 
+  const reloadData = () => {
+    loadDataFromCSV();
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando datos...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-bold text-gray-800 mb-6 text-center">
-          📋 Tabla Interactiva con Filtros
+          📊 Tabla Dinámica con Análisis de Datos
         </h1>
         <p className="text-sm text-gray-600 mt-1 mb-6 text-center">
-          Usa los filtros en cada columna para buscar y ordenar datos específicos.
+          Datos cargados desde CSV y analizados automáticamente con Danfo.js
         </p>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center">
+              <span className="text-red-500 mr-2">⚠️</span>
+              <span className="text-red-700">{error}</span>
+            </div>
+            <p className="text-sm text-red-600 mt-1">
+              Se están mostrando datos de ejemplo. Verifica que el archivo 'final_data.csv' esté en la carpeta pública.
+            </p>
+          </div>
+        )}
+
+        {/* Panel de estadísticas */}
+        {stats && (
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-4 rounded-lg shadow border">
+              <h3 className="font-semibold text-gray-700 mb-2">📈 Resumen del Dataset</h3>
+              <div className="space-y-1 text-sm">
+                <p><span className="font-medium">Filas:</span> {stats.shape[0]}</p>
+                <p><span className="font-medium">Columnas:</span> {stats.shape[1]}</p>
+                <p><span className="font-medium">Valores nulos:</span> {stats.totalNulls}</p>
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded-lg shadow border">
+              <h3 className="font-semibold text-gray-700 mb-2">🔢 Columnas Numéricas</h3>
+              <div className="text-sm">
+                {stats.columns.filter(col => col.isNumeric).length > 0 ? (
+                  stats.columns.filter(col => col.isNumeric).map(col => (
+                    <div key={col.name} className="flex justify-between">
+                      <span>{col.name}:</span>
+                      <span>{col.min !== undefined && col.max !== undefined ? 
+                        `${col.min} - ${col.max}` : 'N/A'}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500">No hay columnas numéricas</p>
+                )}
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded-lg shadow border">
+              <h3 className="font-semibold text-gray-700 mb-2">📑 Columnas Categóricas</h3>
+              <div className="text-sm">
+                {stats.columns.filter(col => col.isCategorical).length > 0 ? (
+                  stats.columns.filter(col => col.isCategorical).map(col => (
+                    <div key={col.name} className="flex justify-between">
+                      <span>{col.name}:</span>
+                      <span>{col.uniqueValues.length} valores</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500">No hay columnas categóricas</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Panel de controles */}
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -205,6 +404,12 @@ const App: React.FC = () => {
               disabled={table.getState().columnFilters.length === 0}
             >
               Limpiar filtros ({table.getState().columnFilters.length})
+            </button>
+            <button
+              onClick={reloadData}
+              className="px-3 py-1.5 text-sm rounded border bg-white hover:bg-gray-50 shadow-sm transition"
+            >
+              🔄 Recargar Datos
             </button>
           </div>
           <div className="w-full md:w-auto">
@@ -234,12 +439,13 @@ const App: React.FC = () => {
               <thead>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <React.Fragment key={headerGroup.id}>
-                    {/* Fila de filtros - AHORA ENCIMA de los headers */}
+                    {/* Fila de filtros - ENCIMA de los headers */}
                     <tr className="bg-gray-50 border-b">
                       {headerGroup.headers.map((header) => {
                         const column = header.column;
-                        const isNumberRange = column.columnDef.filterFn === numberRangeFilter;
-                        const options = (column.columnDef.meta as any)?.options as string[] | undefined;
+                        const meta = column.columnDef.meta as any;
+                        const isNumberRange = meta?.isNumeric;
+                        const options = meta?.options as string[] | undefined;
                         return column.getIsVisible() ? (
                           <th key={`filter-${column.id}`} className="px-3 py-1 text-[11px] font-normal text-gray-600 align-top">
                             {column.getCanFilter() ? (
@@ -257,8 +463,8 @@ const App: React.FC = () => {
                                   {isNumberRange ? (
                                     <NumberRangeFilter
                                       column={column}
-                                      min={(column.columnDef.meta as any)?.min}
-                                      max={(column.columnDef.meta as any)?.max}
+                                      min={meta?.min}
+                                      max={meta?.max}
                                     />
                                   ) : options ? (
                                     <SelectFilter column={column} options={options} />
@@ -286,7 +492,7 @@ const App: React.FC = () => {
                         ) : null;
                       })}
                     </tr>
-                    {/* Fila de headers - AHORA DEBAJO de los filtros */}
+                    {/* Fila de headers - DEBAJO de los filtros */}
                     <tr className="bg-gray-100 border-b">
                       {headerGroup.headers.map((header) => (
                         <th key={header.id} className="px-4 py-2 text-left text-sm font-semibold text-gray-700 align-top">
