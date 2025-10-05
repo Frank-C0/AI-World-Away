@@ -9,29 +9,10 @@ import {
   type ColumnDef,
   type FilterFn,
 } from '@tanstack/react-table';
-import { pyodideContext } from '../../pyodideClient';
 
-// Tipos
-interface DataRow {
-  [key: string]: any;
-}
-
-interface ColumnAnalysis {
-  name: string;
-  dtype: string;
-  isNumeric: boolean;
-  isCategorical: boolean;
-  uniqueValues: string[];
-  min?: number;
-  max?: number;
-  nullCount: number;
-}
-
-interface DataStats {
-  shape: number[];
-  columns: ColumnAnalysis[];
-  totalNulls: number;
-}
+// Importamos la store con sus tipos
+import { useTableStore } from '../../store/tableStore';
+import type { DataRow } from '../../store/tableStore';
 
 // Filtro personalizado para rangos numéricos
 const numberRangeFilter: FilterFn<any> = (row, columnId, filterValue) => {
@@ -92,57 +73,23 @@ const SelectFilter = ({ column, options }: any) => {
 };
 
 const Tables: React.FC = () => {
-  const [data, setData] = useState<DataRow[]>([]);
-  const [rawRows, setRawRows] = useState<any>(null);
-  const [stats, setStats] = useState<DataStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Usar el estado desde Zustand
+  const { 
+    data, 
+    stats, 
+    loading, 
+    error, 
+    columnVisibility,
+    setColumnVisibility,
+    loadDataFromCSV
+  } = useTableStore();
 
-  // Generar datos de ejemplo
-  const generateSampleData = (): DataRow[] => {
-    return [
-      { id: 1, nombre: 'Ana', edad: 45, salario: 5500, ciudad: 'Lima', categoria: 'A', activo: true },
-      { id: 2, nombre: 'Juan', edad: 28, salario: 3200, ciudad: 'Arequipa', categoria: 'B', activo: true },
-      { id: 3, nombre: 'María', edad: 35, salario: 4100, ciudad: 'Cusco', categoria: 'C', activo: false },
-      { id: 4, nombre: 'Pedro', edad: 50, salario: 6000, ciudad: 'Trujillo', categoria: 'A', activo: true },
-      { id: 5, nombre: 'Lucía', edad: 25, salario: 2800, ciudad: 'Lima', categoria: 'B', activo: true },
-      { id: 6, nombre: 'Carlos', edad: 38, salario: 4900, ciudad: 'Arequipa', categoria: 'C', activo: false },
-      { id: 7, nombre: 'Elena', edad: 42, salario: 5200, ciudad: 'Cusco', categoria: 'A', activo: true },
-      { id: 8, nombre: 'Diego', edad: 22, salario: 2500, ciudad: 'Trujillo', categoria: 'B', activo: true },
-      { id: 9, nombre: 'Sofía', edad: 30, salario: 3800, ciudad: 'Lima', categoria: 'C', activo: true },
-      { id: 10, nombre: 'Miguel', edad: 47, salario: 5800, ciudad: 'Arequipa', categoria: 'A', activo: false },
-    ];
-  };
-
-  // Cargar y procesar datos desde CSV
-  const loadDataFromCSV = async (csvUrl: string = './final_data.csv') => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      await pyodideContext.ready;
-      const rows = await pyodideContext.loadCSV(csvUrl);
-      setRawRows(rows);
-
-      const analysis = pyodideContext.analyzeData(rows) as DataStats;
-      setStats(analysis);
-      setData(rows);
-    } catch (err) {
-      console.error('Error loading CSV:', err);
-      setError(`Error al cargar el archivo CSV: ${err instanceof Error ? err.message : 'Error desconocido'}`);
-      
-      // Datos de ejemplo en caso de error
-      const sampleData = generateSampleData();
-      setData(sampleData);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // La función loadDataFromCSV ahora se maneja desde la store
 
   // Cargar datos al montar el componente
   useEffect(() => {
     loadDataFromCSV();
-  }, []);
+  }, [loadDataFromCSV]);
 
   // Definir columnas dinámicamente
   const columns = useMemo<ColumnDef<DataRow>[]>(() => {
@@ -198,8 +145,6 @@ const Tables: React.FC = () => {
       }
     });
   }, [stats]);
-
-  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({});
 
   const table = useReactTable({
     data,
