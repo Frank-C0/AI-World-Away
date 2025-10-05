@@ -1,17 +1,16 @@
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Stars, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine } from 'recharts';
 import './Transition.css';
 
-// Estrella ultra realista con corona solar y manchas solares
 const RealisticStar = ({ brightness, phase }) => {
-  const meshRef = useRef();
-  const coronaRef = useRef();
-  const glowRef = useRef();
-  const flareRef = useRef();
-  const sunspotGroupRef = useRef();
+  const meshRef = useRef(null);
+  const coronaRef = useRef(null);
+  const glowRef = useRef(null);
+  const flareRef = useRef(null);
+  const sunspotGroupRef = useRef(null);
   
   useFrame(({ clock }) => {
     const time = clock.getElapsedTime();
@@ -53,7 +52,6 @@ const RealisticStar = ({ brightness, phase }) => {
   
   return (
     <group>
-      {/* Núcleo estelar */}
       <mesh ref={meshRef}>
         <sphereGeometry args={[starSize, 128, 128]} />
         <meshStandardMaterial 
@@ -65,7 +63,6 @@ const RealisticStar = ({ brightness, phase }) => {
         />
       </mesh>
       
-      {/* Manchas solares */}
       <group ref={sunspotGroupRef}>
         {[...Array(8)].map((_, i) => {
           const angle = (i / 8) * Math.PI * 2;
@@ -85,7 +82,6 @@ const RealisticStar = ({ brightness, phase }) => {
         })}
       </group>
       
-      {/* Fotosfera brillante */}
       <mesh>
         <sphereGeometry args={[starSize * 1.02, 64, 64]} />
         <meshBasicMaterial 
@@ -96,7 +92,6 @@ const RealisticStar = ({ brightness, phase }) => {
         />
       </mesh>
       
-      {/* Cromosfera */}
       <mesh ref={coronaRef}>
         <sphereGeometry args={[starSize * 1.15, 48, 48]} />
         <meshBasicMaterial 
@@ -108,7 +103,6 @@ const RealisticStar = ({ brightness, phase }) => {
         />
       </mesh>
       
-      {/* Corona solar */}
       <mesh ref={glowRef}>
         <sphereGeometry args={[starSize * 1.5, 32, 32]} />
         <meshBasicMaterial 
@@ -120,7 +114,6 @@ const RealisticStar = ({ brightness, phase }) => {
         />
       </mesh>
       
-      {/* Llamaradas solares */}
       <mesh ref={flareRef}>
         <sphereGeometry args={[starSize * 1.7, 16, 16]} />
         <meshBasicMaterial 
@@ -131,7 +124,6 @@ const RealisticStar = ({ brightness, phase }) => {
         />
       </mesh>
       
-      {/* Luces principales */}
       <pointLight 
         intensity={brightness * 4} 
         distance={100} 
@@ -148,12 +140,11 @@ const RealisticStar = ({ brightness, phase }) => {
   );
 };
 
-// Planeta mejorado
-const DetailedPlanet = ({ color, radius, orbitRadius, speed, onTransit, phase, planetType = 'rocky', atmosphereColor, hasRings = false }) => {
-  const meshRef = useRef();
-  const atmosphereRef = useRef();
-  const cloudsRef = useRef();
-  const ringsRef = useRef();
+const DetailedPlanet = ({ color, radius, orbitRadius, speed, onTransit, planetType = 'rocky', atmosphereColor, hasRings = false }) => {
+  const meshRef = useRef(null);
+  const atmosphereRef = useRef(null);
+  const cloudsRef = useRef(null);
+  const ringsRef = useRef(null);
   
   useFrame(({ clock }) => {
     if (meshRef.current) {
@@ -239,7 +230,6 @@ const DetailedPlanet = ({ color, radius, orbitRadius, speed, onTransit, phase, p
   );
 };
 
-// Línea de órbita
 const EnhancedOrbitLine = ({ radius, color = "#0960E1", opacity = 0.3 }) => {
   const points = [];
   const segments = 256;
@@ -274,7 +264,6 @@ const EnhancedOrbitLine = ({ radius, color = "#0960E1", opacity = 0.3 }) => {
   );
 };
 
-// Partículas de polvo espacial
 const SpaceDust = () => {
   const particlesRef = useRef();
   const particleCount = 300;
@@ -332,7 +321,19 @@ const SpaceDust = () => {
   );
 };
 
-// Escena 3D principal
+const CameraController = ({ targetPosition }) => {
+  const { camera } = useThree();
+  const currentPos = useRef(camera.position.clone());
+
+  useFrame(() => {
+    currentPos.current.lerp(new THREE.Vector3(...targetPosition), 0.05);
+    camera.position.copy(currentPos.current);
+    camera.lookAt(0, 0, 0);
+  });
+
+  return null;
+};
+
 const TransitScene = ({ phase, onBrightnessChange, onPlanetPosition }) => {
   const [brightness, setBrightness] = useState(1.0);
   const [transitDepth, setTransitDepth] = useState(0);
@@ -401,6 +402,8 @@ const TransitScene = ({ phase, onBrightnessChange, onPlanetPosition }) => {
           <EnhancedOrbitLine radius={4.5} color="#2E96F5" opacity={0.3} />
           <EnhancedOrbitLine radius={7.5} color="#0960E1" opacity={0.25} />
           <EnhancedOrbitLine radius={11} color="#004246" opacity={0.2} />
+          <EnhancedOrbitLine radius={14.5} color="#E43700" opacity={0.15} />
+          <EnhancedOrbitLine radius={18} color="#EAFE07" opacity={0.1} />
           
           <DetailedPlanet 
             color="#E43700" 
@@ -428,14 +431,62 @@ const TransitScene = ({ phase, onBrightnessChange, onPlanetPosition }) => {
             atmosphereColor="#2E96F5"
             hasRings={true}
           />
+          <DetailedPlanet 
+            color="#2E96F5" 
+            radius={0.45} 
+            orbitRadius={14.5} 
+            speed={0.12} 
+            planetType="rocky" 
+            atmosphereColor="#0960E1"
+          />
+          <DetailedPlanet 
+            color="#EAFE07" 
+            radius={0.38} 
+            orbitRadius={18} 
+            speed={0.08} 
+            planetType="rocky"
+          />
+        </>
+      )}
+
+      {phase === 8 && (
+        <>
+          <RealisticStar brightness={1} phase={7} />
+          <EnhancedOrbitLine radius={6} color="#2E96F5" opacity={0.3} />
+          <EnhancedOrbitLine radius={10} color="#0960E1" opacity={0.25} />
+          <EnhancedOrbitLine radius={15} color="#E43700" opacity={0.2} />
+          
+          <DetailedPlanet 
+            color="#2E96F5" 
+            radius={0.4} 
+            orbitRadius={6} 
+            speed={0.5} 
+            planetType="rocky" 
+            atmosphereColor="#0960E1"
+          />
+          <DetailedPlanet 
+            color="#07173F" 
+            radius={0.8} 
+            orbitRadius={10} 
+            speed={0.25} 
+            planetType="gas" 
+            atmosphereColor="#0960E1"
+            hasRings={true}
+          />
+          <DetailedPlanet 
+            color="#E43700" 
+            radius={0.3} 
+            orbitRadius={15} 
+            speed={0.15} 
+            planetType="rocky"
+          />
         </>
       )}
     </>
   );
 };
 
-// Componente principal
-const TransitAnimation = ({ isOpen, onClose }) => {
+const Transition = ({ isOpen, onClose }) => {
   const [phase, setPhase] = useState(0);
   const [brightness, setBrightness] = useState(1.0);
   const [lightCurveData, setLightCurveData] = useState([]);
@@ -443,6 +494,7 @@ const TransitAnimation = ({ isOpen, onClose }) => {
   const [cameraPos, setCameraPos] = useState([0, 8, 20]);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [showFinalAnimation, setShowFinalAnimation] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
   useEffect(() => {
     if (!isOpen) {
@@ -451,6 +503,7 @@ const TransitAnimation = ({ isOpen, onClose }) => {
       setLightCurveData([]);
       setAnalysisProgress(0);
       setShowFinalAnimation(false);
+      setIsTransitioning(false);
       return;
     }
     
@@ -468,10 +521,14 @@ const TransitAnimation = ({ isOpen, onClose }) => {
     
     const timeouts = timeline.map(({ delay, phase }) => 
       setTimeout(() => {
-        setPhase(phase);
-        if (phase === 8) {
-          setShowFinalAnimation(true);
-        }
+        setIsTransitioning(true);
+        setTimeout(() => {
+          setPhase(phase);
+          setIsTransitioning(false);
+          if (phase === 8) {
+            setShowFinalAnimation(true);
+          }
+        }, 600);
       }, delay)
     );
     
@@ -586,7 +643,7 @@ const TransitAnimation = ({ isOpen, onClose }) => {
   
   return (
     <div className="modal-overlay">
-      <div className="modal-content">
+      <div className={`modal-content ${isTransitioning ? 'transitioning' : ''}`}>
         <button className="close-button" onClick={onClose}>✕</button>
         
         <div className="animation-container">
@@ -595,6 +652,7 @@ const TransitAnimation = ({ isOpen, onClose }) => {
             gl={{ antialias: true, alpha: true }}
           >
             <color attach="background" args={['#000000']} />
+            <CameraController targetPosition={cameraPos} />
             <TransitScene 
               phase={phase} 
               onBrightnessChange={setBrightness}
@@ -603,13 +661,13 @@ const TransitAnimation = ({ isOpen, onClose }) => {
           </Canvas>
           
           {!phaseContent.showFinal && (
-            <div className={`floating-text ${phaseContent.className}`}>
+            <div className={`floating-text ${phaseContent.className} ${isTransitioning ? 'fade-out' : 'fade-in'}`}>
               {phaseContent.text}
             </div>
           )}
           
           {phaseContent.showFinal && showFinalAnimation && (
-            <div className="final-animation">
+            <div className="final-animation fade-in">
               <div className="final-title">
                 ¡Hemos detectado un nuevo exoplaneta!
               </div>
@@ -617,7 +675,7 @@ const TransitAnimation = ({ isOpen, onClose }) => {
           )}
           
           {phaseContent.showChart && lightCurveData.length > 0 && (
-            <div className="chart-container">
+            <div className={`chart-container ${isTransitioning ? 'fade-out' : 'slide-in-right'}`}>
               <div className="chart-header">
                 <h3>Curva de Luz</h3>
                 <div className="brightness-indicator">
@@ -655,7 +713,7 @@ const TransitAnimation = ({ isOpen, onClose }) => {
           )}
           
           {phaseContent.showAnalysis && (
-            <div className="analysis-panel">
+            <div className={`analysis-panel ${isTransitioning ? 'fade-out' : 'zoom-in'}`}>
               <h3>Analizando Datos del Tránsito</h3>
               <div className="progress-bar">
                 <div 
@@ -702,4 +760,4 @@ const TransitAnimation = ({ isOpen, onClose }) => {
   );
 };
 
-export default TransitAnimation;
+export default Transition;
