@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -11,8 +11,8 @@ import {
 } from '@tanstack/react-table';
 
 // Importamos la store con sus tipos
-import { useTableStore } from '../../store/tableStore';
-import type { DataRow } from '../../store/tableStore';
+import { useDataStore } from '../../store/dataStore';
+import type { DataRow } from '../../store/dataStore';
 
 // Filtro personalizado para rangos numéricos
 const numberRangeFilter: FilterFn<any> = (row, columnId, filterValue) => {
@@ -83,14 +83,11 @@ const Tables: React.FC = () => {
     columnVisibility,
     setColumnVisibility,
     loadDataFromCSV
-  } = useTableStore();
+  } = useDataStore();
 
   // La función loadDataFromCSV ahora se maneja desde la store
 
-  // Cargar datos al montar el componente
-  useEffect(() => {
-    loadDataFromCSV();
-  }, [loadDataFromCSV]);
+  // Ya no cargamos automáticamente: se hace desde DataLoader.
 
   // Definir columnas dinámicamente
   const columns = useMemo<ColumnDef<DataRow>[]>(() => {
@@ -175,6 +172,18 @@ const Tables: React.FC = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
           <p className="text-xl font-semibold text-gray-700">Cargando datos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data.length) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 p-6">
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-bold text-gray-700 mb-2">No hay datos cargados</h2>
+          <p className="text-gray-600 mb-4 text-sm">Utiliza el modal <span className="font-semibold">"🗂️ Datos"</span> para cargar un archivo CSV, pegar texto o indicar una URL.</p>
+          <button onClick={() => loadDataFromCSV()} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium">Intentar cargar dataset por defecto</button>
         </div>
       </div>
     );

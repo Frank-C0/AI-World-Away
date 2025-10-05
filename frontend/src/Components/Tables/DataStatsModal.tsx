@@ -1,6 +1,6 @@
 import React from 'react';
-import type { DataStats } from '../../store/tableStore';
-import { useTableStore } from '../../store/tableStore';
+import type { DataStats } from '../../store/dataStore';
+import { useDataStore } from '../../store/dataStore';
 
 interface DataStatsModalProps {
   isOpen?: boolean; // legacy standalone usage
@@ -10,7 +10,7 @@ interface DataStatsModalProps {
 }
 
 const DataStatsModal: React.FC<DataStatsModalProps> = ({ isOpen, onClose, stats, embedded = false }) => {
-  const storeStats = useTableStore(s => s.stats);
+  const storeStats = useDataStore(s => s.stats);
   const finalStats = stats ?? storeStats;
   const visible = embedded ? !!finalStats : !!isOpen && !!finalStats;
   if (!visible || !finalStats) return null;

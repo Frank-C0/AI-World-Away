@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 
 import Transition from './Components/IntroAnimation/Transition';
@@ -8,12 +8,19 @@ import Graficos from './Components/Charts/Graficos';
 import DataStatsModal from './Components/Tables/DataStatsModal';
 import Modal from './Components/Common/Modal';
 import { useUIStore } from './store/uiStore';
-import { useTableStore } from './store/tableStore';
+import { useDataStore } from './store/dataStore';
+import DataLoader from './Components/Common/DataLoader';
 
 function App() {
   const [showAnimation, setShowAnimation] = useState(true);
   const { activeModal, toggleModal } = useUIStore();
-  const stats = useTableStore(s => s.stats);
+  const stats = useDataStore(s => s.stats);
+  const initPyodideEarly = useDataStore(s => s.initPyodideEarly);
+
+  useEffect(() => {
+    // Inicializa Pyodide en segundo plano apenas carga la app
+    initPyodideEarly();
+  }, [initPyodideEarly]);
 
   return (
     <div className="App">
@@ -23,9 +30,16 @@ function App() {
       {/* ✅ BOTONES FLOTANTES */}
       {!showAnimation && (
         <div className="controls">
+          <button onClick={() => toggleModal('data')} className={activeModal === 'data' ? 'active' : ''}>
+            {activeModal === 'data' ? '✕ Datos' : '🗂️ Datos'}
+          </button>
           <button onClick={() => toggleModal('tables')} className={activeModal === 'tables' ? 'active' : ''}>
             {activeModal === 'tables' ? '✕ Tablas' : '📊 Tablas'}
           </button>
+      {/* ✅ PANEL: Data Loader */}
+      <Modal id="data" title="🗂️ Carga de Datos" widthClass="w-[760px]" heightClass="max-h-[80vh]">
+        <DataLoader />
+      </Modal>
           <button onClick={() => toggleModal('charts')} className={activeModal === 'charts' ? 'active' : ''}>
             {activeModal === 'charts' ? '✕ Gráficos' : '📈 Gráficos'}
           </button>

@@ -89,7 +89,7 @@ def analyze(rows):
     }
 `;
 
-export function initPyodide(): PyodideContext {
+export function initPyodide(): PyodideContext & { _pyodide?: any } {
   if (!_ready) {
     _ready = (async () => {
       // @ts-ignore global loadPyodide cargado en index.html
@@ -123,7 +123,7 @@ export function initPyodide(): PyodideContext {
     return result.toJs ? result.toJs({}) : result;
   };
 
-  return { ready: _ready, runPython, loadCSV, analyzeData };
+  return { ready: _ready, runPython, loadCSV, analyzeData, _pyodide } as any;
 }
 
 export const pyodideContext = initPyodide();

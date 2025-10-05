@@ -2,7 +2,7 @@ import React from 'react';
 import { useUIStore } from '../../store/uiStore';
 
 interface ModalProps {
-  id: 'tables' | 'charts' | 'stats';
+  id: 'tables' | 'charts' | 'stats' | 'data';
   title: string;
   children: React.ReactNode;
   widthClass?: string; // Tailwind width override
