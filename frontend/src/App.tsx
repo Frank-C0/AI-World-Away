@@ -10,17 +10,24 @@ import Modal from './Components/Common/Modal';
 import { useUIStore } from './store/uiStore';
 import { useDataStore } from './store/dataStore';
 import DataLoader from './Components/Common/DataLoader';
+import PyodideLoader from './Components/Common/PyodideLoader';
 
 function App() {
   const [showAnimation, setShowAnimation] = useState(true);
+  const [loadingPyodide, setLoadingPyodide] = useState(false);
   const { activeModal, toggleModal } = useUIStore();
   const stats = useDataStore(s => s.stats);
   const initPyodideEarly = useDataStore(s => s.initPyodideEarly);
+  const pyodideReady = useDataStore(s => s.pyodideReady);
 
-  useEffect(() => {
-    // Inicializa Pyodide en segundo plano apenas carga la app
-    initPyodideEarly();
-  }, [initPyodideEarly]);
+  // Inicia la carga de Pyodide cuando la animación termina
+  const handleAnimationEnd = () => {
+    setShowAnimation(false);
+    setLoadingPyodide(true);
+    initPyodideEarly().then(() => {
+      setLoadingPyodide(false);
+    });
+  };
 
   return (
     <div className="App">
@@ -68,10 +75,13 @@ function App() {
         <div className="transition-container">
           <Transition 
             isOpen={showAnimation} 
-            onClose={() => setShowAnimation(false)} 
+            onClose={handleAnimationEnd} 
           />
         </div>
       )}
+
+      {/* Loader de Pyodide */}
+      <PyodideLoader visible={loadingPyodide || (!pyodideReady && !showAnimation)} />
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { useDataStore } from '../../store/dataStore';
 
 const DataLoader: React.FC = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const { loadDataFromCSV, loadDataFromFile, loading, error, stats, data, pyodideReady } = useDataStore();
+  const { loadDataFromCSV, loadDataFromFile, loading, error, stats, data } = useDataStore();
   const [url, setUrl] = useState('./final_data.csv');
   const [dragActive, setDragActive] = useState(false);
 
@@ -34,8 +34,7 @@ const DataLoader: React.FC = () => {
     <div className="space-y-6 text-sm">
       <div className="p-4 rounded-lg border border-cyan-400/20 bg-cyan-400/5 flex items-center justify-between">
         <div>
-          <p className="font-semibold text-cyan-200 mb-1">Estado Pyodide: {pyodideReady ? '✅ Listo' : '⏳ Inicializando...'}</p>
-          <p className="text-cyan-100/70 text-xs max-w-md">El motor Python se precarga en segundo plano para análisis rápidos de tus datasets.</p>
+          <p className="text-cyan-100/70 text-xs max-w-md">Carga tus datos CSV para comenzar a explorarlos y visualizarlos.</p>
         </div>
         <button onClick={loadSample} className="px-4 py-2 bg-cyan-600/30 hover:bg-cyan-600/50 rounded-md text-cyan-100 text-xs font-semibold border border-cyan-400/30">Cargar dataset por defecto</button>
       </div>
