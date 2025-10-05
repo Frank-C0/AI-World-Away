@@ -73,6 +73,7 @@ const SelectFilter = ({ column, options }: any) => {
 };
 
 const Tables: React.FC = () => {
+
   // Usar el estado desde Zustand
   const { 
     data, 
@@ -205,63 +206,7 @@ const Tables: React.FC = () => {
           </div>
         )}
 
-        {/* Panel de estadísticas */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">Resumen del Dataset</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Filas:</span>
-                  <span className="font-semibold">{stats.shape[0]}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Columnas:</span>
-                  <span className="font-semibold">{stats.shape[1]}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Valores nulos:</span>
-                  <span className="font-semibold text-red-600">{stats.totalNulls}</span>
-                </div>
-              </div>
-            </div>
 
-            <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">Columnas Numéricas</h3>
-              <div className="space-y-2 text-xs">
-                {stats.columns.filter(col => col.isNumeric).length > 0 ? (
-                  stats.columns.filter(col => col.isNumeric).map(col => (
-                    <div key={col.name} className="flex justify-between">
-                      <span className="text-gray-600 font-medium">{col.name}:</span>
-                      <span className="text-gray-800">
-                        {col.min !== undefined && col.max !== undefined ? 
-                          `${col.min} - ${col.max}` : 'N/A'}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 italic">No hay columnas numéricas</p>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">Columnas Categóricas</h3>
-              <div className="space-y-2 text-xs">
-                {stats.columns.filter(col => col.isCategorical).length > 0 ? (
-                  stats.columns.filter(col => col.isCategorical).map(col => (
-                    <div key={col.name} className="flex justify-between">
-                      <span className="text-gray-600 font-medium">{col.name}:</span>
-                      <span className="text-gray-800">{col.uniqueValues.length} valores</span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 italic">No hay columnas categóricas</p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Panel de controles */}
         <div className="bg-white rounded-lg shadow p-4 border border-gray-200 mb-4">
@@ -278,6 +223,7 @@ const Tables: React.FC = () => {
             >
               🔄 Recargar Datos
             </button>
+            {/* Botón de estadísticas eliminado - ahora en controles globales */}
 
             <details className="relative ml-auto">
               <summary className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer font-medium text-sm list-none">
@@ -420,6 +366,7 @@ const Tables: React.FC = () => {
           </div>
         </div>
       </div>
+      {/* Modal de estadísticas movido a nivel de App */}
     </div>
   );
 };

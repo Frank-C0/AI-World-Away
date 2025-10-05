@@ -5,11 +5,15 @@ import Transition from './Components/IntroAnimation/Transition';
 import Interfaz from './Components/ThreeD/Interfaz';
 import Tables from './Components/Tables/Tables';
 import Graficos from './Components/Charts/Graficos';
+import DataStatsModal from './Components/Tables/DataStatsModal';
+import Modal from './Components/Common/Modal';
+import { useUIStore } from './store/uiStore';
+import { useTableStore } from './store/tableStore';
 
 function App() {
   const [showAnimation, setShowAnimation] = useState(true);
-  const [showTables, setShowTables] = useState(false);
-  const [showGraficos, setShowGraficos] = useState(false);
+  const { activeModal, toggleModal } = useUIStore();
+  const stats = useTableStore(s => s.stats);
 
   return (
     <div className="App">
@@ -19,46 +23,31 @@ function App() {
       {/* ✅ BOTONES FLOTANTES */}
       {!showAnimation && (
         <div className="controls">
-          <button 
-            onClick={() => setShowTables(!showTables)}
-            className={showTables ? 'active' : ''}
-          >
-            {showTables ? '✕ Cerrar Tablas' : '📊 Ver Tablas'}
+          <button onClick={() => toggleModal('tables')} className={activeModal === 'tables' ? 'active' : ''}>
+            {activeModal === 'tables' ? '✕ Tablas' : '📊 Tablas'}
           </button>
-          <button 
-            onClick={() => setShowGraficos(!showGraficos)}
-            className={showGraficos ? 'active' : ''}
-          >
-            {showGraficos ? '✕ Cerrar Gráficos' : '📈 Ver Gráficos'}
+          <button onClick={() => toggleModal('charts')} className={activeModal === 'charts' ? 'active' : ''}>
+            {activeModal === 'charts' ? '✕ Gráficos' : '📈 Gráficos'}
+          </button>
+          <button onClick={() => toggleModal('stats')} className={activeModal === 'stats' ? 'active' : ''} disabled={!stats}>
+            {activeModal === 'stats' ? '✕ Stats' : '📑 Stats'}
           </button>
         </div>
       )}
 
       {/* ✅ PANEL: Tablas */}
-      {showTables && (
-        <div className="overlay overlay-tables">
-          <div className="overlay-header">
-            <h3>📊 Tablas de Datos</h3>
-            <button onClick={() => setShowTables(false)} className="close-btn">✕</button>
-          </div>
-          <div className="overlay-content">
-            <Tables />
-          </div>
-        </div>
-      )}
+      <Modal id="tables" title="📊 Tablas de Datos" widthClass="w-[900px]" heightClass="max-h-[78vh]">
+        <Tables />
+      </Modal>
 
       {/* ✅ PANEL: Gráficos */}
-      {showGraficos && (
-        <div className="overlay overlay-graficos">
-          <div className="overlay-header">
-            <h3>📈 Gráficos</h3>
-            <button onClick={() => setShowGraficos(false)} className="close-btn">✕</button>
-          </div>
-          <div className="overlay-content">
-            <Graficos />
-          </div>
-        </div>
-      )}
+      <Modal id="charts" title="📈 Gráficos" widthClass="w-[820px]" heightClass="h-[560px]">
+        <Graficos />
+      </Modal>
+
+      <Modal id="stats" title="📑 Estadísticas del Dataset" widthClass="w-[1000px]" heightClass="max-h-[80vh]">
+        <DataStatsModal embedded />
+      </Modal>
 
       {/* ✅ ANIMACIÓN DE INTRO */}
       {showAnimation && (
