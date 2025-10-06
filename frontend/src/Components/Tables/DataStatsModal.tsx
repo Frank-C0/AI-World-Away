@@ -25,8 +25,8 @@ const DataStatsModal: React.FC<DataStatsModalProps> = ({ isOpen, onClose, stats,
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-5 flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">📊 Estadísticas del Dataset</h2>
-              <p className="text-blue-100 text-sm mt-1">Análisis completo de los datos</p>
+              <h2 className="text-2xl font-bold">📊 Dataset Statistics</h2>
+              <p className="text-blue-100 text-sm mt-1">Comprehensive analysis of dataset structure and content</p>
             </div>
             {onClose && (
               <button onClick={onClose} className="hover:bg-white/20 rounded-full p-2 transition">
@@ -61,30 +61,30 @@ const EmbeddedContent: React.FC<EmbeddedContentProps> = ({ stats, numeric, categ
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <SummaryCard label="Total de Filas" value={stats.shape[0].toLocaleString()} icon="📋" gradient="from-cyan-600/60 to-cyan-400/40" />
-        <SummaryCard label="Total de Columnas" value={stats.shape[1].toString()} icon="📊" gradient="from-purple-600/60 to-purple-400/40" />
-        <SummaryCard label="Valores Nulos" value={stats.totalNulls.toLocaleString()} icon="⚠️" gradient="from-amber-600/60 to-amber-400/40" />
-        <SummaryCard label="Completitud" value={((1 - stats.totalNulls / (stats.shape[0]*stats.shape[1]))*100).toFixed(1)+"%"} icon="✅" gradient="from-emerald-600/60 to-emerald-400/40" />
+        <SummaryCard label="Total Rows" value={stats.shape[0].toLocaleString()} icon="📋" gradient="from-cyan-600/60 to-cyan-400/40" />
+        <SummaryCard label="Total Columns" value={stats.shape[1].toString()} icon="📊" gradient="from-purple-600/60 to-purple-400/40" />
+        <SummaryCard label="Null Values" value={stats.totalNulls.toLocaleString()} icon="⚠️" gradient="from-amber-600/60 to-amber-400/40" />
+        <SummaryCard label="Completeness" value={((1 - stats.totalNulls / (stats.shape[0]*stats.shape[1]))*100).toFixed(1)+"%"} icon="✅" gradient="from-emerald-600/60 to-emerald-400/40" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <ColumnPanel title={`🔢 Numéricas (${numeric.length})`} cols={numeric} panel={panel} sectionHead={sectionHead} dark={dark} type="numeric" />
-        <ColumnPanel title={`🏷️ Categóricas (${categorical.length})`} cols={categorical} panel={panel} sectionHead={sectionHead} dark={dark} type="categorical" />
-        <ColumnPanel title={`📝 Texto (${textCols.length})`} cols={textCols} panel={panel} sectionHead={sectionHead} dark={dark} type="text" />
+        <ColumnPanel title={`🔢 Numeric (${numeric.length})`} cols={numeric} panel={panel} sectionHead={sectionHead} dark={dark} type="numeric" />
+        <ColumnPanel title={`🏷️ Categorical (${categorical.length})`} cols={categorical} panel={panel} sectionHead={sectionHead} dark={dark} type="categorical" />
+        <ColumnPanel title={`📝 Text (${textCols.length})`} cols={textCols} panel={panel} sectionHead={sectionHead} dark={dark} type="text" />
       </div>
 
       <div className={panel}>
         <div className={`px-5 py-4 border-b ${dark ? 'border-cyan-400/20' : 'border-gray-200'}`}>
           <h3 className={`text-lg font-semibold flex items-center gap-2 ${sectionHead}`}>
             <span className="text-2xl">📋</span>
-            Resumen Detallado de Columnas
+            Detailed Column Summary
           </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className={tableHead}>
               <tr>
-                {['Columna','Tipo','Categoría','Valores Únicos','Valores Nulos','Rango/Muestra'].map(h => (
+                {['Column','Type','Category','Unique Values','Null Values','Range/Sample'].map(h => (
                   <th key={h} className="px-5 py-2 text-left text-[11px] uppercase tracking-wide font-semibold">{h}</th>
                 ))}
               </tr>
@@ -102,7 +102,7 @@ const EmbeddedContent: React.FC<EmbeddedContentProps> = ({ stats, numeric, categ
                       col.isCategorical ? (dark ? 'bg-cyan-500/20 text-cyan-200' : 'bg-green-100 text-green-800') :
                       (dark ? 'bg-cyan-500/20 text-cyan-200' : 'bg-yellow-100 text-yellow-800')
                     }`}>
-                      {col.isNumeric ? 'Numérica' : col.isCategorical ? 'Categórica' : 'Texto'}
+                      {col.isNumeric ? 'Numeric' : col.isCategorical ? 'Categorical' : 'Text'}
                     </span>
                   </td>
                   <td className="px-5 py-2">{col.uniqueValues.length.toLocaleString()}</td>
@@ -144,12 +144,12 @@ const ColumnPanel: React.FC<{title: string; cols: DataStats['columns']; panel: s
         <div key={col.name} className={`p-3 rounded-md border ${dark ? 'border-cyan-400/20 bg-cyan-400/5 text-cyan-100' : type==='numeric'? 'bg-blue-50 border-blue-200 text-blue-800' : type==='categorical' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-yellow-50 border-yellow-200 text-yellow-800'}`}>
           <div className="font-medium">{col.name}</div>
           <div className={`${dark ? 'text-cyan-200/80' : ''} text-xs mt-1 space-y-0.5`}>            
-            <div>Tipo: {col.dtype}</div>
+            <div>Type: {col.dtype}</div>
             {col.isNumeric && col.min !== undefined && col.max !== undefined && (
-              <div>Rango: {col.min.toLocaleString()} - {col.max.toLocaleString()}</div>
+              <div>Range: {col.min.toLocaleString()} - {col.max.toLocaleString()}</div>
             )}
-            {col.isCategorical && <div>Valores únicos: {col.uniqueValues.length}</div>}
-            <div>Nulos: {col.nullCount}</div>
+            {col.isCategorical && <div>Unique Values: {col.uniqueValues.length}</div>}
+            <div>Null: {col.nullCount}</div>
             {col.isCategorical && col.uniqueValues.length <= 10 && (
               <div className="mt-1 flex flex-wrap gap-1">
                 {col.uniqueValues.map((v,i) => (
@@ -159,7 +159,7 @@ const ColumnPanel: React.FC<{title: string; cols: DataStats['columns']; panel: s
             )}
           </div>
         </div>
-      )) : <p className="italic text-xs opacity-70">No hay columnas</p>}
+      )) : <p className="italic text-xs opacity-70">No columns available</p>}
     </div>
   </div>
 );

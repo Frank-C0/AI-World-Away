@@ -582,60 +582,61 @@ const Transition = ({ isOpen, onClose }) => {
     }
   }, [brightness, phase]);
   
-  const getPhaseContent = () => {
-    switch(phase) {
-      case 0:
-        return {
-          text: "¿Cómo detectamos exoplanetas con el método de tránsito?",
-          className: "phase-0"
-        };
-      case 1:
-        return {
-          text: "Primero, observamos estrellas lejanas durante largos periodos...",
-          className: "phase-1"
-        };
-      case 2:
-        return {
-          text: "Midiendo cuidadosamente la cantidad de luz que emiten",
-          className: "phase-2"
-        };
-      case 3:
-        return {
-          text: "Imaginemos una estrella que brilla constantemente en el espacio",
-          className: "phase-3"
-        };
-      case 4:
-        return {
-          text: "Pero cuando un planeta orbita alrededor de ella...",
-          className: "phase-4"
-        };
-      case 5:
-        return {
-          text: "El planeta bloquea parte de la luz que emite la estrella",
-          className: "phase-5",
-          showChart: true
-        };
-      case 6:
-        return {
-          text: "Entonces, tras el análisis de datos, como el patrón de oscuridad y brillo",
-          className: "phase-6",
-          showAnalysis: true
-        };
-      case 7:
-        return {
-          text: "Si se cumplen las condiciones correctas...",
-          className: "phase-7"
-        };
-      case 8:
-        return {
-          text: "",
-          className: "phase-8 final",
-          showFinal: true
-        };
-      default:
-        return { text: "", className: "" };
-    }
-  };
+ const getPhaseContent = () => {
+  switch(phase) {
+    case 0:
+      return {
+        text: "How do we detect exoplanets using the transit method?",
+        className: "phase-0"
+      };
+    case 1:
+      return {
+        text: "First, we observe distant stars for long periods...",
+        className: "phase-1"
+      };
+    case 2:
+      return {
+        text: "Carefully measuring the amount of light they emit",
+        className: "phase-2"
+      };
+    case 3:
+      return {
+        text: "Imagine a star shining constantly in space",
+        className: "phase-3"
+      };
+    case 4:
+      return {
+        text: "But when a planet orbits around it...",
+        className: "phase-4"
+      };
+    case 5:
+      return {
+        text: "The planet blocks part of the light emitted by the star",
+        className: "phase-5",
+        showChart: true
+      };
+    case 6:
+      return {
+        text: "Then, after analyzing data such as brightness and darkness patterns",
+        className: "phase-6",
+        showAnalysis: true
+      };
+    case 7:
+      return {
+        text: "If the right conditions are met...",
+        className: "phase-7"
+      };
+    case 8:
+      return {
+        text: "",
+        className: "phase-8 final",
+        showFinal: true
+      };
+    default:
+      return { text: "", className: "" };
+  }
+};
+
   
   const phaseContent = getPhaseContent();
   
@@ -669,17 +670,18 @@ const Transition = ({ isOpen, onClose }) => {
           {phaseContent.showFinal && showFinalAnimation && (
             <div className="final-animation fade-in">
               <div className="final-title">
-                ¡Hemos detectado un nuevo exoplaneta!
+                We have detected a new exoplanet!
               </div>
             </div>
           )}
+
           
           {phaseContent.showChart && lightCurveData.length > 0 && (
             <div className={`chart-container ${isTransitioning ? 'fade-out' : 'slide-in-right'}`}>
               <div className="chart-header">
-                <h3>Curva de Luz</h3>
+                <h3>Light Curve</h3>
                 <div className="brightness-indicator">
-                  Brillo: {(brightness * 100).toFixed(2)}%
+                  Brightness: {(brightness * 100).toFixed(2)}%
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={200}>
@@ -706,7 +708,7 @@ const Transition = ({ isOpen, onClose }) => {
               </ResponsiveContainer>
               {planetPosition.depth > 0 && (
                 <div className="transit-info">
-                  Profundidad del tránsito: {planetPosition.depth.toFixed(2)}%
+                  Transit depth: {planetPosition.depth.toFixed(2)}%
                 </div>
               )}
             </div>
@@ -714,7 +716,7 @@ const Transition = ({ isOpen, onClose }) => {
           
           {phaseContent.showAnalysis && (
             <div className={`analysis-panel ${isTransitioning ? 'fade-out' : 'zoom-in'}`}>
-              <h3>Analizando Datos del Tránsito</h3>
+              <h3>Analyzing Transit Data</h3>
               <div className="progress-bar">
                 <div 
                   className="progress-fill" 
@@ -726,7 +728,7 @@ const Transition = ({ isOpen, onClose }) => {
               {analysisProgress > 30 && (
                 <div className="data-item fade-in">
                   <span className="icon">📐</span>
-                  <span>Calculando tamaño del planeta...</span>
+                  <span>Calculating planet size...</span>
                   {analysisProgress > 40 && <span className="check">✓</span>}
                 </div>
               )}
@@ -734,24 +736,25 @@ const Transition = ({ isOpen, onClose }) => {
               {analysisProgress > 60 && (
                 <div className="data-item fade-in">
                   <span className="icon">🌍</span>
-                  <span>Determinando período orbital...</span>
+                  <span>Determining orbital period...</span>
                   {analysisProgress > 70 && <span className="check">✓</span>}
                 </div>
               )}
-              
+
               {analysisProgress > 85 && (
                 <div className="data-item fade-in">
                   <span className="icon">🔬</span>
-                  <span>Verificando señal...</span>
+                  <span>Verifying signal...</span>
                   {analysisProgress === 100 && <span className="check">✓</span>}
                 </div>
               )}
-              
+
               {analysisProgress === 100 && (
                 <div className="result fade-in">
-                  <strong>¡Exoplaneta Confirmado!</strong>
+                  <strong>Exoplanet Confirmed!</strong>
                 </div>
               )}
+
             </div>
           )}
         </div>

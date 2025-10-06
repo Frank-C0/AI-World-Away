@@ -57,7 +57,7 @@ const Interfaz = () => {
             background: 'radial-gradient(circle, #000010, #000)',
           }}
         >
-          <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Mapa Galáctico de Exoplanetas</h1>
+          <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Galactic Map of Exoplanets</h1>
           <button
             onClick={() => setShowMap(true)}
             style={{
@@ -72,15 +72,15 @@ const Interfaz = () => {
               transition: '0.3s',
             }}
           >
-            Ver mapa
+            View Map
           </button>
         </div>
       ) : (
         <>
-          {/* ✅ Aquí va el panel lateral de filtros */}
+          {/* ✅ Sidebar filter panel */}
           <ExoplanetFilters onChange={(filters) => console.log(filters)} />
 
-          {/* ✅ Y aquí el canvas 3D */}
+          {/* ✅ 3D canvas */}
           <Canvas
             camera={{ position: [0, 0, 120], fov: 60 }}
             style={{
@@ -92,15 +92,15 @@ const Interfaz = () => {
               background: 'black',
             }}
           >
-            {/* Luces y fondo */}
+            {/* Lights and background */}
             <ambientLight intensity={0.5} />
             <pointLight position={[50, 50, 50]} intensity={1.2} />
             <Stars radius={300} depth={100} count={5000} factor={4} saturation={0} fade />
 
-            {/* Galaxia */}
+            {/* Galaxy */}
             <Galaxy />
 
-            {/* Controles de usuario */}
+            {/* User controls */}
             <OrbitControls
               enableZoom
               enablePan

@@ -24,7 +24,7 @@ function App() {
   const applyDataCleaning = useDataStore(s => s.applyDataCleaning);
   const cleaningConfig = useDataStore(s => s.cleaningConfig);
 
-  // Inicia la carga de Pyodide cuando la animación termina
+  // Initialize Pyodide in the background as soon as the app loads
   const handleAnimationEnd = () => {
     setShowAnimation(false);
     setLoadingPyodide(true);
@@ -35,24 +35,26 @@ function App() {
 
   return (
     <div className="App">
-      {/* ✅ FONDO PERMANENTE: Interfaz 3D */}
+      {/* ✅ PERMANENT BACKGROUND: 3D Interface */}
       <Interfaz />
 
-      {/* ✅ BOTONES FLOTANTES */}
+      {/* ✅ FLOATING BUTTONS */}
       {!showAnimation && (
         <div className="controls">
           <button onClick={() => toggleModal('data')} className={activeModal === 'data' ? 'active' : ''}>
-            {activeModal === 'data' ? '✕ Datos' : '🗂️ Datos'}
+            {activeModal === 'data' ? '✕ Data' : '🗂️ Data'}
           </button>
           <button onClick={() => toggleModal('tables')} className={activeModal === 'tables' ? 'active' : ''}>
-            {activeModal === 'tables' ? '✕ Tablas' : '📊 Tablas'}
+            {activeModal === 'tables' ? '✕ Tables' : '📊 Tables'}
           </button>
+
       {/* ✅ PANEL: Data Loader */}
-      <Modal id="data" title="🗂️ Carga de Datos" widthClass="w-[760px]" heightClass="max-h-[80vh]">
+      <Modal id="data" title="🗂️ Data Upload" widthClass="w-[760px]" heightClass="max-h-[80vh]">
         <DataLoader />
       </Modal>
+
           <button onClick={() => toggleModal('charts')} className={activeModal === 'charts' ? 'active' : ''}>
-            {activeModal === 'charts' ? '✕ Gráficos' : '📈 Gráficos'}
+            {activeModal === 'charts' ? '✕ Charts' : '📈 Charts'}
           </button>
           <button onClick={() => toggleModal('cleaning')} className={activeModal === 'cleaning' ? 'active' : ''} disabled={!stats}>
             {activeModal === 'cleaning' ? '✕ Limpieza' : '🧹 Limpieza'}
@@ -61,18 +63,18 @@ function App() {
             {activeModal === 'correlation' ? '✕ Correlación' : '🔄 Correlación'}
           </button>
           <button onClick={() => toggleModal('stats')} className={activeModal === 'stats' ? 'active' : ''} disabled={!stats}>
-            {activeModal === 'stats' ? '✕ Stats' : '📑 Stats'}
+            {activeModal === 'stats' ? '✕ Statistics' : '📑 Statistics'}
           </button>
         </div>
       )}
 
-      {/* ✅ PANEL: Tablas */}
-      <Modal id="tables" title="📊 Tablas de Datos" widthClass="w-[900px]" heightClass="max-h-[78vh]">
+      {/* ✅ PANEL: Tables */}
+      <Modal id="tables" title="📊 Data Tables" widthClass="w-[900px]" heightClass="max-h-[78vh]">
         <Tables />
       </Modal>
 
-      {/* ✅ PANEL: Gráficos */}
-      <Modal id="charts" title="📈 Gráficos" widthClass="w-[820px]" heightClass="h-[560px]">
+      {/* ✅ PANEL: Charts */}
+      <Modal id="charts" title="📈 Charts" widthClass="w-[820px]" heightClass="h-[560px]">
         <Graficos />
       </Modal>
       
@@ -96,11 +98,12 @@ function App() {
         <CorrelationModal embedded />
       </Modal>
 
-      <Modal id="stats" title="📑 Estadísticas del Dataset" widthClass="w-[1000px]" heightClass="max-h-[80vh]">
+      {/* ✅ PANEL: Dataset Statistics */}
+      <Modal id="stats" title="📑 Dataset Statistics" widthClass="w-[1000px]" heightClass="max-h-[80vh]">
         <DataStatsModal embedded />
       </Modal>
 
-      {/* ✅ ANIMACIÓN DE INTRO */}
+      {/* ✅ INTRO ANIMATION */}
       {showAnimation && (
         <div className="transition-container">
           <Transition 
