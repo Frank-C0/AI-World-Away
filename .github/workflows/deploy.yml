@@ -26,7 +26,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -39,10 +39,12 @@ jobs:
         uses: actions/configure-pages@v4
 
       - name: Install dependencies
-        run: cd frontend && pnpm install
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: cd frontend && pnpm run build
+        working-directory: ./frontend
+        run: pnpm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
