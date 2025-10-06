@@ -115,7 +115,7 @@ const CorrelationModal: React.FC<CorrelationModalProps> = ({ embedded = false })
           </div>
         )}
         
-        {!correlationImage && !loading && !error && data.length > 0 && (
+        {!correlationImage && !loading && !error && data.length < 3 && (
           <div className="text-cyan-300 text-center">
             <p>No se pudo generar la matriz de correlación.</p>
             <p className="text-xs mt-2">Se necesitan al menos dos columnas numéricas para calcular correlaciones.</p>

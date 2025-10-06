@@ -7,6 +7,7 @@ import Tables from './Components/Tables/Tables';
 import Graficos from './Components/Charts/Graficos';
 import DataStatsModal from './Components/Tables/DataStatsModal';
 import CorrelationModal from './Components/Charts/CorrelationModal';
+import DataCleaning from './Components/DataCleaning/DataCleaning';
 import Modal from './Components/Common/Modal';
 import { useUIStore } from './store/uiStore';
 import { useDataStore } from './store/dataStore';
@@ -20,6 +21,8 @@ function App() {
   const stats = useDataStore(s => s.stats);
   const initPyodideEarly = useDataStore(s => s.initPyodideEarly);
   const pyodideReady = useDataStore(s => s.pyodideReady);
+  const applyDataCleaning = useDataStore(s => s.applyDataCleaning);
+  const cleaningConfig = useDataStore(s => s.cleaningConfig);
 
   // Inicia la carga de Pyodide cuando la animación termina
   const handleAnimationEnd = () => {
@@ -51,6 +54,9 @@ function App() {
           <button onClick={() => toggleModal('charts')} className={activeModal === 'charts' ? 'active' : ''}>
             {activeModal === 'charts' ? '✕ Gráficos' : '📈 Gráficos'}
           </button>
+          <button onClick={() => toggleModal('cleaning')} className={activeModal === 'cleaning' ? 'active' : ''} disabled={!stats}>
+            {activeModal === 'cleaning' ? '✕ Limpieza' : '🧹 Limpieza'}
+          </button>
           <button onClick={() => toggleModal('correlation')} className={activeModal === 'correlation' ? 'active' : ''} disabled={!stats}>
             {activeModal === 'correlation' ? '✕ Correlación' : '🔄 Correlación'}
           </button>
@@ -68,6 +74,22 @@ function App() {
       {/* ✅ PANEL: Gráficos */}
       <Modal id="charts" title="📈 Gráficos" widthClass="w-[820px]" heightClass="h-[560px]">
         <Graficos />
+      </Modal>
+      
+      {/* ✅ PANEL: Limpieza de Datos */}
+      <Modal 
+        id="cleaning" 
+        title="🧹 Limpieza de Datos" 
+        widthClass="w-[1000px]" 
+        heightClass="max-h-[85vh]"
+        onClose={() => {
+          // Solo aplicar si está habilitada la limpieza
+          if (cleaningConfig.isEnabled) {
+            applyDataCleaning();
+          }
+        }}
+      >
+        <DataCleaning />
       </Modal>
       
       <Modal id="correlation" title="🔄 Matriz de Correlación" widthClass="w-[900px]" heightClass="h-[640px]">

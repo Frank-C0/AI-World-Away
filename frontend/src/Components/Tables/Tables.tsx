@@ -82,7 +82,11 @@ const Tables: React.FC = () => {
     error, 
     columnVisibility,
     setColumnVisibility,
-    loadDataFromCSV
+    loadDataFromCSV,
+    showCleanedData,
+    setShowCleanedData,
+    cleanedRows,
+    cleaningConfig
   } = useDataStore();
 
   // La función loadDataFromCSV ahora se maneja desde la store
@@ -192,14 +196,6 @@ const Tables: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Tabla Dinámica con Análisis de Datos
-          </h1>
-          <p className="text-gray-600">
-            Datos cargados desde CSV y analizados automáticamente con Pyodide (Python)
-          </p>
-        </div>
 
         {error && (
           <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -232,7 +228,20 @@ const Tables: React.FC = () => {
             >
               🔄 Recargar Datos
             </button>
-            {/* Botón de estadísticas eliminado - ahora en controles globales */}
+            
+            {/* Toggle para datos limpios/crudos */}
+            {cleaningConfig.isEnabled && cleanedRows && (
+              <button
+                onClick={() => setShowCleanedData(!showCleanedData)}
+                className={`px-4 py-2 rounded-lg font-medium transition text-sm ${
+                  showCleanedData 
+                    ? 'bg-green-100 hover:bg-green-200 text-green-700' 
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                }`}
+              >
+                {showCleanedData ? '🧹 Datos Limpios' : '📄 Datos Crudos'}
+              </button>
+            )}
 
             <details className="relative ml-auto">
               <summary className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer font-medium text-sm list-none">
@@ -253,6 +262,32 @@ const Tables: React.FC = () => {
               </div>
             </details>
           </div>
+          
+          {/* Información adicional sobre el estado de los datos */}
+          {cleaningConfig.isEnabled && (
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <span>
+                  📊 Datos originales: {data.length} filas
+                </span>
+                {cleanedRows && (
+                  <span>
+                    🧹 Datos limpios: {cleanedRows.length} filas
+                  </span>
+                )}
+                {cleaningConfig.selectedColumns.length > 0 && (
+                  <span>
+                    📋 Columnas seleccionadas: {cleaningConfig.selectedColumns.length}
+                  </span>
+                )}
+                {cleaningConfig.targetColumn && (
+                  <span>
+                    🎯 Objetivo: {cleaningConfig.targetColumn}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Tabla */}
