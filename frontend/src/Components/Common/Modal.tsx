@@ -25,7 +25,7 @@ const Modal: React.FC<ModalProps> = ({ id, title, children, widthClass = 'w-[760
   return (
     <div className="fixed inset-0 pointer-events-none flex items-start justify-center pt-24 z-[300]">
       {/* Modal card */}
-      <div className={`pointer-events-auto bg-[rgba(10,25,47,0.92)] border border-cyan-400/40 shadow-2xl rounded-xl backdrop-blur-md ${widthClass} ${heightClass} overflow-hidden flex flex-col animate-[fadeIn_.25s_ease]`}>        
+      <div className={`pointer-events-auto bg-[rgba(10,25,47,0.92)] text-white border border-cyan-400/40 shadow-2xl rounded-xl backdrop-blur-md ${widthClass} ${heightClass} overflow-hidden flex flex-col animate-[fadeIn_.25s_ease]`}>        
         <div className="flex items-center justify-between px-5 py-3 border-b border-cyan-400/30 bg-gradient-to-r from-cyan-700/30 to-transparent">
           <h3 className="m-0 font-semibold tracking-wide text-cyan-200 flex items-center gap-2">
             {title}

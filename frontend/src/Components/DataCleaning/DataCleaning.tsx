@@ -79,7 +79,7 @@ const DataCleaning: React.FC = () => {
   };
 
   return (
-    <div className="p-4 space-y-4 max-h-[75vh] overflow-y-auto">
+    <div className="p-4 space-y-4 max-h-[75vh] overflow-y-auto text-black">
       
       {/* Configuración Global */}
       <div className="bg-gray-50 rounded-lg p-4">
@@ -111,137 +111,341 @@ const DataCleaning: React.FC = () => {
         </div>
       </div>
 
-      {/* Configuración de Columnas - Una sola columna */}
+      {/* Configuración de Columnas - Diseño Mejorado */}
       <div className="bg-gray-50 rounded-lg p-4">
         <h3 className="font-semibold mb-3">📋 Configuración de Columnas</h3>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {stats.columns.map(col => {
             const isSelected = cleaningConfig.selectedColumns.includes(col.name);
             const effectiveType = getEffectiveColumnType(col.name);
             const strategy = cleaningConfig.columnStrategies[col.name] || {
               removeNulls: false,
               removeOutliers: false,
-              fillStrategy: 'drop' as const
+              fillStrategy: 'drop' as const,
+              selectedCategories: effectiveType === 'categorical' ? [...col.uniqueValues] : undefined,
+              groupRareCategories: false,
+              rareThreshold: 5
             };
 
+            const nullPercentage = rawRows ? (col.nullCount / rawRows.length * 100).toFixed(1) : '0';
+            const uniqueCount = col.uniqueValues.length;
+            const uniquePercentage = rawRows ? (uniqueCount / rawRows.length * 100).toFixed(1) : '0';
+
             return (
-              <div key={col.name} className="border rounded-lg p-3 bg-white">
-                <div className="grid grid-cols-12 gap-3 items-center">
-                  
-                  {/* Checkbox de selección */}
-                  <div className="col-span-1">
+              <div key={col.name} className="border rounded-lg p-4 bg-white">
+                {/* Header con información de la columna */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
                     <input
                       type="checkbox"
                       checked={isSelected}
                       onChange={(e) => handleColumnSelection(col.name, e.target.checked)}
                       className="rounded"
                     />
-                  </div>
-                  
-                  {/* Nombre de columna */}
-                  <div className="col-span-2">
-                    <div className="font-medium text-sm">{col.name}</div>
-                    <div className="text-xs text-gray-500">
-                      {col.nullCount > 0 && `${col.nullCount} nulos`}
+                    <div>
+                      <div className="font-medium text-sm">{col.name}</div>
+                      <div className="text-xs text-gray-500">
+                        {col.dtype} • {uniqueCount} únicos ({uniquePercentage}%)
+                      </div>
                     </div>
                   </div>
                   
-                  {/* Tipo de columna */}
-                  <div className="col-span-2">
+                  <div className="text-right">
                     <select
                       value={effectiveType}
                       onChange={(e) => handleColumnTypeChange(col.name, e.target.value as 'numeric' | 'categorical')}
                       disabled={!isSelected}
-                      className="w-full px-2 py-1 border rounded text-sm disabled:bg-gray-100"
+                      className="px-2 py-1 border rounded text-sm disabled:bg-gray-100"
                     >
                       <option value="numeric">Numérica</option>
                       <option value="categorical">Categórica</option>
                     </select>
                   </div>
-                  
-                  {/* Estrategias específicas */}
-                  <div className="col-span-7">
-                    {isSelected && (
-                      <div className="flex gap-2 flex-wrap">
-                        
-                        {/* Eliminar nulos */}
-                        {col.nullCount > 0 && (
-                          <label className="flex items-center gap-1">
+                </div>
+
+                {/* Estadísticas de la columna */}
+                <div className="bg-gray-50 rounded p-2 mb-3 text-xs">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {col.nullCount > 0 && (
+                      <div className="text-red-600">
+                        <span className="font-medium">🚫 Nulos:</span> {col.nullCount} ({nullPercentage}%)
+                      </div>
+                    )}
+                    {effectiveType === 'numeric' && col.min !== undefined && col.max !== undefined && (
+                      <div className="text-blue-600">
+                        <span className="font-medium">📊 Rango:</span> {col.min.toFixed(2)} - {col.max.toFixed(2)}
+                      </div>
+                    )}
+                    {effectiveType === 'categorical' && (
+                      <div className="text-green-600">
+                        <span className="font-medium">🏷️ Categorías:</span> {uniqueCount}
+                      </div>
+                    )}
+                    <div className="text-gray-600">
+                      <span className="font-medium">🔢 Tipo:</span> {col.dtype}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Configuración de limpieza */}
+                {isSelected && (
+                  <div className="space-y-3">
+                    
+                    {/* Manejo de valores nulos */}
+                    {col.nullCount > 0 && (
+                      <div className="border rounded p-3 bg-blue-50">
+                        <div className="font-medium text-sm mb-2">🚫 Valores Nulos ({col.nullCount} filas)</div>
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-2">
                             <input
-                              type="checkbox"
+                              type="radio"
+                              name={`null-${col.name}`}
                               checked={strategy.removeNulls}
-                              onChange={(e) => handleStrategyChange(col.name, { removeNulls: e.target.checked })}
+                              onChange={() => handleStrategyChange(col.name, { removeNulls: true, fillStrategy: 'drop' })}
                               className="rounded"
                             />
-                            <span className="text-xs">Sin nulos</span>
+                            <span className="text-sm">Eliminar filas con nulos</span>
                           </label>
-                        )}
-                        
-                        {/* Eliminar outliers (solo numérica) */}
-                        {effectiveType === 'numeric' && (
-                          <label className="flex items-center gap-1">
+                          <label className="flex items-center gap-2">
                             <input
-                              type="checkbox"
-                              checked={strategy.removeOutliers}
-                              onChange={(e) => handleStrategyChange(col.name, { removeOutliers: e.target.checked })}
+                              type="radio"
+                              name={`null-${col.name}`}
+                              checked={!strategy.removeNulls}
+                              onChange={() => handleStrategyChange(col.name, { removeNulls: false })}
                               className="rounded"
                             />
-                            <span className="text-xs">Sin outliers</span>
+                            <span className="text-sm">Rellenar valores nulos:</span>
                           </label>
-                        )}
-                        
-                        {/* Estrategia de relleno */}
-                        {col.nullCount > 0 && !strategy.removeNulls && (
-                          <select
-                            value={strategy.fillStrategy}
-                            onChange={(e) => handleStrategyChange(col.name, { 
-                              fillStrategy: e.target.value as typeof strategy.fillStrategy 
-                            })}
-                            className="px-2 py-1 border rounded text-xs"
-                          >
-                            <option value="drop">Eliminar</option>
-                            {effectiveType === 'numeric' && (
-                              <>
-                                <option value="mean">Promedio</option>
-                                <option value="median">Mediana</option>
-                              </>
-                            )}
-                            <option value="mode">Moda</option>
-                            <option value="forward">Adelante</option>
-                            <option value="backward">Atrás</option>
-                          </select>
+                          {!strategy.removeNulls && (
+                            <div className="ml-6">
+                              <select
+                                value={strategy.fillStrategy}
+                                onChange={(e) => handleStrategyChange(col.name, { 
+                                  fillStrategy: e.target.value as typeof strategy.fillStrategy 
+                                })}
+                                className="px-2 py-1 border rounded text-sm"
+                              >
+                                {effectiveType === 'numeric' && (
+                                  <>
+                                    <option value="mean">Promedio</option>
+                                    <option value="median">Mediana</option>
+                                  </>
+                                )}
+                                <option value="mode">Moda (valor más común)</option>
+                                <option value="forward">Propagación hacia adelante</option>
+                                <option value="backward">Propagación hacia atrás</option>
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Configuración específica para numéricas */}
+                    {effectiveType === 'numeric' && (
+                      <div className="border rounded p-3 bg-green-50">
+                        <div className="font-medium text-sm mb-2">📊 Limpieza Numérica</div>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={strategy.removeOutliers}
+                            onChange={(e) => handleStrategyChange(col.name, { removeOutliers: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Eliminar outliers (método IQR)</span>
+                        </label>
+                        {col.min !== undefined && col.max !== undefined && (
+                          <div className="text-xs text-gray-600 mt-1">
+                            Rango actual: {col.min.toFixed(2)} - {col.max.toFixed(2)}
+                          </div>
                         )}
                       </div>
                     )}
+
+                    {/* Configuración específica para categóricas */}
+                    {effectiveType === 'categorical' && (
+                      <div className="border rounded p-3 bg-purple-50">
+                        <div className="font-medium text-sm mb-2">🏷️ Filtros Categóricos</div>
+                        
+                        {/* Selección de categorías */}
+                        <div className="mb-3">
+                          <div className="text-sm mb-2">Categorías a incluir:</div>
+                          <div className="max-h-32 overflow-y-auto border rounded p-2 bg-white">
+                            <div className="space-y-1">
+                              {col.uniqueValues.slice(0, 20).map(value => {
+                                const isSelected = strategy.selectedCategories?.includes(value) || false;
+                                return (
+                                  <label key={value} className="flex items-center gap-2 text-xs">
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={(e) => {
+                                        const current = strategy.selectedCategories || [];
+                                        const updated = e.target.checked 
+                                          ? [...current, value]
+                                          : current.filter(v => v !== value);
+                                        handleStrategyChange(col.name, { selectedCategories: updated });
+                                      }}
+                                      className="rounded"
+                                    />
+                                    <span className="truncate">{value}</span>
+                                  </label>
+                                );
+                              })}
+                              {col.uniqueValues.length > 20 && (
+                                <div className="text-xs text-gray-500 italic">
+                                  ... y {col.uniqueValues.length - 20} categorías más
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => handleStrategyChange(col.name, { selectedCategories: [...col.uniqueValues] })}
+                              className="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 rounded"
+                            >
+                              Seleccionar todas
+                            </button>
+                            <button
+                              onClick={() => handleStrategyChange(col.name, { selectedCategories: [] })}
+                              className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
+                            >
+                              Deseleccionar todas
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Agrupación de categorías raras */}
+                        <div>
+                          <label className="flex items-center gap-2 mb-2">
+                            <input
+                              type="checkbox"
+                              checked={strategy.groupRareCategories || false}
+                              onChange={(e) => handleStrategyChange(col.name, { groupRareCategories: e.target.checked })}
+                              className="rounded"
+                            />
+                            <span className="text-sm">Agrupar categorías poco frecuentes</span>
+                          </label>
+                          {strategy.groupRareCategories && (
+                            <div className="ml-6">
+                              <label className="text-xs text-gray-600">
+                                Umbral (%):
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="50"
+                                  value={strategy.rareThreshold || 5}
+                                  onChange={(e) => handleStrategyChange(col.name, { rareThreshold: parseFloat(e.target.value) })}
+                                  className="ml-2 w-16 px-1 py-0.5 border rounded text-xs"
+                                />
+                              </label>
+                              <div className="text-xs text-gray-500 mt-1">
+                                Categorías con menos de {strategy.rareThreshold || 5}% se agruparán como "Otros"
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Estado actual */}
+      {/* Estado actual - Mejorado */}
       <div className="bg-blue-50 rounded-lg p-4">
-        <h3 className="font-semibold mb-2">📊 Estado Actual</h3>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="font-medium">Datos originales:</span> {rawRows?.length || 0} filas
-          </div>
-          {cleanedRows && (
-            <div>
-              <span className="font-medium">Datos limpios:</span> {cleanedRows.length} filas
+        <h3 className="font-semibold mb-3">📊 Estado Actual del Dataset</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">📁 Datos originales:</span> 
+              <span className="text-blue-600">{rawRows?.length || 0} filas</span>
             </div>
-          )}
-          <div>
-            <span className="font-medium">Columnas seleccionadas:</span> {cleaningConfig.selectedColumns.length}
-          </div>
-          {cleaningConfig.targetColumn && (
-            <div>
-              <span className="font-medium">Objetivo:</span> {cleaningConfig.targetColumn}
+            {cleanedRows && (
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">🧹 Datos limpios:</span> 
+                <span className="text-green-600">{cleanedRows.length} filas</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">🎯 Columnas seleccionadas:</span> 
+              <span className="text-purple-600">{cleaningConfig.selectedColumns.length}</span>
             </div>
-          )}
+            {cleaningConfig.targetColumn && (
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">🎪 Columna objetivo:</span> 
+                <span className="text-orange-600">{cleaningConfig.targetColumn}</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="space-y-2">
+            {rawRows && cleanedRows && (
+              <>
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium">📉 Reducción:</span> 
+                  <span className="text-red-600">
+                    -{((rawRows.length - cleanedRows.length) / rawRows.length * 100).toFixed(1)}%
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium">💾 Filas conservadas:</span> 
+                  <span className="text-green-600">
+                    {((cleanedRows.length / rawRows.length) * 100).toFixed(1)}%
+                  </span>
+                </div>
+              </>
+            )}
+            
+            {/* Conteo de configuraciones activas */}
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">⚙️ Estrategias activas:</span> 
+              <span className="text-indigo-600">
+                {Object.keys(cleaningConfig.columnStrategies).length}
+              </span>
+            </div>
+          </div>
         </div>
+        
+        {/* Indicadores de configuración activa */}
+        {cleaningConfig.isEnabled && (
+          <div className="mt-3 pt-3 border-t border-blue-200">
+            <div className="flex flex-wrap gap-2">
+              {cleaningConfig.removeDuplicates && (
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                  🗑️ Sin duplicados
+                </span>
+              )}
+              {Object.entries(cleaningConfig.columnStrategies).map(([col, strategy]) => (
+                <div key={col} className="flex gap-1">
+                  {strategy.removeNulls && (
+                    <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
+                      {col}: Sin nulos
+                    </span>
+                  )}
+                  {strategy.removeOutliers && (
+                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                      {col}: Sin outliers
+                    </span>
+                  )}
+                  {strategy.selectedCategories && strategy.selectedCategories.length < (stats?.columns.find(c => c.name === col)?.uniqueValues.length || 0) && (
+                    <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                      {col}: Filtrado ({strategy.selectedCategories.length} cats)
+                    </span>
+                  )}
+                  {strategy.groupRareCategories && (
+                    <span className="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded-full">
+                      {col}: Agrupado
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Botón de Aplicar Limpieza */}

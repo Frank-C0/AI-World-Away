@@ -29,6 +29,11 @@ export interface CleaningStrategy {
   removeNulls: boolean;
   removeOutliers: boolean; // por cuartiles
   fillStrategy: 'mean' | 'median' | 'mode' | 'forward' | 'backward' | 'drop';
+  // Para categóricas: filtrar por valores específicos
+  selectedCategories?: string[];
+  // Para categóricas: agrupar valores poco frecuentes
+  groupRareCategories?: boolean;
+  rareThreshold?: number; // umbral para considerar categoría como rara (porcentaje)
 }
 
 export interface ColumnTypeConfig {

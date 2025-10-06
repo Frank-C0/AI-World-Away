@@ -181,6 +181,28 @@ def clean_data(rows, config):
             effective_type = column_types.get(col, 'numeric' if pd.api.types.is_numeric_dtype(df[col]) else 'categorical')
             console.log(f"Column {col} effective type: {effective_type}")
             
+            # Aplicar filtros categóricos (antes de otras operaciones)
+            if effective_type == 'categorical':
+                selected_categories = strategy.get('selectedCategories', [])
+                if selected_categories:
+                    initial_rows = len(df)
+                    df = df[df[col].isin(selected_categories)]
+                    console.log(f"Filtered {col} to selected categories: {initial_rows - len(df)} rows removed")
+                
+                # Agrupar categorías raras
+                if strategy.get('groupRareCategories', False):
+                    try:
+                        rare_threshold = strategy.get('rareThreshold', 5) / 100.0  # convertir a decimal
+                        value_counts = df[col].value_counts()
+                        total_count = len(df)
+                        rare_values = value_counts[value_counts / total_count < rare_threshold].index.tolist()
+                        
+                        if rare_values:
+                            df[col] = df[col].replace(rare_values, 'Otros')
+                            console.log(f"Grouped {len(rare_values)} rare categories in {col} as 'Otros'")
+                    except Exception as e:
+                        console.log(f"Error grouping rare categories in {col}: {str(e)}")
+            
             # Remover nulls
             if strategy.get('removeNulls', False):
                 initial_rows = len(df)
@@ -206,52 +228,52 @@ def clean_data(rows, config):
                 
             # Estrategias de relleno
             fill_strategy = strategy.get('fillStrategy')
-            if fill_strategy:
+            if fill_strategy and fill_strategy != 'drop':
                 console.log(f"Applying fill strategy {fill_strategy} to {col}")
                 
-            if fill_strategy == 'mean' and effective_type == 'numeric':
-                try:
-                    if pd.api.types.is_numeric_dtype(df[col]):
-                        mean_val = df[col].mean()
-                        nulls_filled = df[col].isna().sum()
-                        df[col] = df[col].fillna(mean_val)
-                        console.log(f"Filled {nulls_filled} nulls in {col} with mean: {mean_val}")
-                except Exception as e:
-                    console.log(f"Error filling {col} with mean: {str(e)}")
-            elif fill_strategy == 'median' and effective_type == 'numeric':
-                try:
-                    if pd.api.types.is_numeric_dtype(df[col]):
-                        median_val = df[col].median()
-                        nulls_filled = df[col].isna().sum()
-                        df[col] = df[col].fillna(median_val)
-                        console.log(f"Filled {nulls_filled} nulls in {col} with median: {median_val}")
-                except Exception as e:
-                    console.log(f"Error filling {col} with median: {str(e)}")
-            elif fill_strategy == 'mode':
-                try:
-                    mode_val = df[col].mode()
-                    if len(mode_val) > 0:
-                        nulls_filled = df[col].isna().sum()
-                        df[col] = df[col].fillna(mode_val[0])
-                        console.log(f"Filled {nulls_filled} nulls in {col} with mode: {mode_val[0]}")
-                except Exception as e:
-                    console.log(f"Error filling {col} with mode: {str(e)}")
-            elif fill_strategy == 'forward':
-                try:
-                    nulls_before = df[col].isna().sum()
-                    df[col] = df[col].ffill()
-                    nulls_after = df[col].isna().sum()
-                    console.log(f"Forward filled {nulls_before - nulls_after} nulls in {col}")
-                except Exception as e:
-                    console.log(f"Error forward filling {col}: {str(e)}")
-            elif fill_strategy == 'backward':
-                try:
-                    nulls_before = df[col].isna().sum()
-                    df[col] = df[col].bfill()
-                    nulls_after = df[col].isna().sum()
-                    console.log(f"Backward filled {nulls_before - nulls_after} nulls in {col}")
-                except Exception as e:
-                    console.log(f"Error backward filling {col}: {str(e)}")
+                if fill_strategy == 'mean' and effective_type == 'numeric':
+                    try:
+                        if pd.api.types.is_numeric_dtype(df[col]):
+                            mean_val = df[col].mean()
+                            nulls_filled = df[col].isna().sum()
+                            df[col] = df[col].fillna(mean_val)
+                            console.log(f"Filled {nulls_filled} nulls in {col} with mean: {mean_val}")
+                    except Exception as e:
+                        console.log(f"Error filling {col} with mean: {str(e)}")
+                elif fill_strategy == 'median' and effective_type == 'numeric':
+                    try:
+                        if pd.api.types.is_numeric_dtype(df[col]):
+                            median_val = df[col].median()
+                            nulls_filled = df[col].isna().sum()
+                            df[col] = df[col].fillna(median_val)
+                            console.log(f"Filled {nulls_filled} nulls in {col} with median: {median_val}")
+                    except Exception as e:
+                        console.log(f"Error filling {col} with median: {str(e)}")
+                elif fill_strategy == 'mode':
+                    try:
+                        mode_val = df[col].mode()
+                        if len(mode_val) > 0:
+                            nulls_filled = df[col].isna().sum()
+                            df[col] = df[col].fillna(mode_val[0])
+                            console.log(f"Filled {nulls_filled} nulls in {col} with mode: {mode_val[0]}")
+                    except Exception as e:
+                        console.log(f"Error filling {col} with mode: {str(e)}")
+                elif fill_strategy == 'forward':
+                    try:
+                        nulls_before = df[col].isna().sum()
+                        df[col] = df[col].ffill()
+                        nulls_after = df[col].isna().sum()
+                        console.log(f"Forward filled {nulls_before - nulls_after} nulls in {col}")
+                    except Exception as e:
+                        console.log(f"Error forward filling {col}: {str(e)}")
+                elif fill_strategy == 'backward':
+                    try:
+                        nulls_before = df[col].isna().sum()
+                        df[col] = df[col].bfill()
+                        nulls_after = df[col].isna().sum()
+                        console.log(f"Backward filled {nulls_before - nulls_after} nulls in {col}")
+                    except Exception as e:
+                        console.log(f"Error backward filling {col}: {str(e)}")
             elif fill_strategy == 'drop':
                 try:
                     initial_rows = len(df)
