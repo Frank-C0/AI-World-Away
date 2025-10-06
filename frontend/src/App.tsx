@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-
+import HelpAssistant from './Components/Common/HelpAssitant';
 import Transition from './Components/IntroAnimation/Transition';
 import Interfaz from './Components/ThreeD/Interfaz';
 import Tables from './Components/Tables/Tables';
@@ -131,6 +131,8 @@ function App() {
 
       {/* Loader de Pyodide */}
       <PyodideLoader visible={loadingPyodide || (!pyodideReady && !showAnimation)} />
+      <HelpAssistant />
+
     </div>
   );
 }
