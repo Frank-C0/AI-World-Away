@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ActiveModal = 'tables' | 'charts' | 'stats' | 'data' | 'correlation' | 'cleaning' | null;
+export type ActiveModal = 'tables' | 'charts' | 'stats' | 'data' | 'correlation' | 'cleaning' | 'ml' | null;
 
 interface UIState {
   activeModal: ActiveModal;
