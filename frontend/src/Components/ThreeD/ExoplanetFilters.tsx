@@ -51,10 +51,7 @@ const ExoplanetFilters: React.FC<ExoplanetFiltersProps> = ({
             onChange={(e) => handleChange('koiDisposition', e.target.value)}
             style={{ marginLeft: '10px', padding: '5px', backgroundColor: '#1a1a2e', color: 'white', border: '1px solid #0ff' }}
           >
-            <option value="all">All</option>
             <option value="CONFIRMED">Confirmed</option>
-            <option value="CANDIDATE">Candidate</option>
-            <option value="FALSE POSITIVE">False Positive</option>
           </select>
         </label>
       </div>
