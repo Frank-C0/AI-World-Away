@@ -8,8 +8,10 @@ export interface PyodideContext {
   analyzeData: (rows: any[]) => any;
   parseCSVText: (text: string) => Promise<any[]>;
   writeCSVAndParse: (fileName: string, text: string) => Promise<any[]>;
-  generateCorrelationPlot: (rows: any[], method?: string) => Promise<string>;
+  generateCorrelationPlot: (rows: any[], method?: string, sizeMultiplier?: number) => Promise<string>;
+  calculateTargetCorrelations: (rows: any[], targetColumn: string, method?: string) => Promise<any[]>;
   cleanData: (rows: any[], config: any) => Promise<any[]>;
+  trainXGBoost: (rows: any[], config: any) => Promise<any>;
 }
 
 let _pyodide: any; // pyodide instance
@@ -55,10 +57,49 @@ def analyze(rows):
         })
     return {'shape': [len(df), len(df.columns)], 'columns': col_meta, 'totalNulls': total_nulls}
 
-def generate_correlation_plot(rows, method='pearson'):
+def calculate_target_correlations(rows, target_column, method='pearson'):
+    """
+    Calcula las correlaciones de todas las columnas numéricas con la variable objetivo
+    """
+    if not rows or not target_column:
+        return []
+    
+    df = pd.DataFrame(rows)
+    
+    if target_column not in df.columns:
+        return []
+    
+    # Filtrar solo columnas numéricas
+    numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+    
+    if target_column not in numeric_cols:
+        return []
+    
+    correlations = []
+    target_series = df[target_column]
+    
+    for col in numeric_cols:
+        if col != target_column:
+            try:
+                corr_value = target_series.corr(df[col], method=method)
+                if not pd.isna(corr_value):
+                    correlations.append({
+                        'column': col,
+                        'correlation': float(corr_value),
+                        'abs_correlation': abs(float(corr_value))
+                    })
+            except:
+                continue
+    
+    # Ordenar por correlación absoluta descendente
+    correlations.sort(key=lambda x: x['abs_correlation'], reverse=True)
+    return correlations
+
+def generate_correlation_plot(rows, method='pearson', figsize_multiplier=1.0):
     """
     Generates a correlation heatmap using seaborn and returns it as a base64 image.
     methods: 'pearson', 'kendall', 'spearman'
+    figsize_multiplier: factor para ajustar el tamaño de la imagen
     """
     import matplotlib.pyplot as plt
     import seaborn as sns
@@ -74,30 +115,71 @@ def generate_correlation_plot(rows, method='pearson'):
     # Compute correlation matrix
     corr_df = df[numeric_cols].corr(method=method)
     
-    # Create figure
-    plt.figure(figsize=(10, 8))
-    mask = None
+    # Tamaño automático más inteligente
+    n_cols = len(numeric_cols)
+    
+    # Tamaño base escalado inteligentemente
+    if n_cols <= 5:
+        base_size = 8
+    elif n_cols <= 10:
+        base_size = 10
+    elif n_cols <= 15:
+        base_size = 12
+    else:
+        base_size = 14
+    
+    # Aplicar multiplicador pero con límites sensatos
+    final_size = base_size * figsize_multiplier
+    final_size = max(6, min(20, final_size))  # Entre 6 y 20 pulgadas
+    
+    figsize = (final_size, final_size)
+    
+    # Crear figura
+    plt.figure(figsize=figsize)
+    
+    # Tamaño de fuente automático basado en número de columnas
+    if n_cols <= 8:
+        annot_size = 10
+        title_size = 14
+    elif n_cols <= 12:
+        annot_size = 8
+        title_size = 12
+    elif n_cols <= 20:
+        annot_size = 7
+        title_size = 11
+    else:
+        annot_size = 6
+        title_size = 10
     
     # Generate correlation heatmap
     sns.heatmap(
         corr_df, 
         annot=True, 
-        mask=mask,
         cmap='coolwarm', 
         vmin=-1, 
         vmax=1, 
         center=0,
         square=True, 
-        linewidths=.5, 
-        cbar_kws={"shrink": .8},
-        fmt=".2f"
+        linewidths=0.5, 
+        cbar_kws={"shrink": 0.8},
+        fmt=".2f",
+        annot_kws={'size': annot_size}
     )
-    plt.title(f'Correlation Matrix ({method.capitalize()})')
+    
+    plt.title(f'Matriz de Correlación ({method.capitalize()})', fontsize=title_size, pad=20)
     plt.tight_layout()
     
-    # Convert to base64 to return to client
+    # DPI automático para balancear calidad y tamaño de archivo
+    if n_cols <= 10:
+        dpi = 120
+    elif n_cols <= 15:
+        dpi = 110
+    else:
+        dpi = 100
+    
+    # Convertir a base64 para retornar al cliente
     buf = io.BytesIO()
-    plt.savefig(buf, format='png', dpi=100)
+    plt.savefig(buf, format='png', dpi=int(dpi), bbox_inches='tight', facecolor='white')
     buf.seek(0)
     img_base64 = base64.b64encode(buf.read()).decode('utf-8')
     plt.close()
@@ -292,6 +374,301 @@ def clean_data(rows, config):
         import traceback
         console.log(f"Traceback: {traceback.format_exc()}")
         raise e
+
+def train_xgboost_model(rows, config):
+    """
+    Entrena un modelo XGBoost con la configuración especificada
+    """
+    try:
+        console.log("🤖 Starting XGBoost training...")
+        
+        if not rows:
+            raise ValueError("No data provided for training")
+        
+        # Crear DataFrame
+        df = pd.DataFrame(rows)
+        console.log(f"Dataset shape: {df.shape}")
+        
+        # Convertir configuración
+        if hasattr(config, 'to_py'):
+            config_dict = config.to_py()
+        else:
+            config_dict = dict(config)
+        
+        target_column = config_dict.get('targetColumn')
+        feature_columns = config_dict.get('featureColumns', [])
+        
+        if not target_column or not feature_columns:
+            raise ValueError("Target column and feature columns must be specified")
+        
+        console.log(f"Target: {target_column}")
+        console.log(f"Features: {feature_columns}")
+        
+        # Preparar datos
+        X = df[feature_columns].copy()
+        y = df[target_column].copy()
+        
+        # Manejar encoding automático de categóricas
+        categorical_encoding = config_dict.get('categoricalEncoding', 'auto')
+        console.log(f"Categorical encoding: {categorical_encoding}")
+        
+        # Detectar columnas categóricas
+        categorical_cols = []
+        for col in feature_columns:
+            if col in X.columns:
+                if X[col].dtype == 'object' or X[col].dtype.name == 'category':
+                    categorical_cols.append(col)
+        
+        console.log(f"Categorical columns detected: {categorical_cols}")
+        
+        # Aplicar encoding si hay categóricas
+        if categorical_cols and categorical_encoding != 'auto':
+            if categorical_encoding == 'onehot':
+                # One-hot encoding
+                for col in categorical_cols:
+                    dummies = pd.get_dummies(X[col], prefix=col, drop_first=True)
+                    X = pd.concat([X.drop(col, axis=1), dummies], axis=1)
+                console.log(f"Applied one-hot encoding to {len(categorical_cols)} columns")
+            elif categorical_encoding == 'label':
+                # Label encoding
+                from sklearn.preprocessing import LabelEncoder
+                for col in categorical_cols:
+                    le = LabelEncoder()
+                    X[col] = le.fit_transform(X[col].astype(str))
+                console.log(f"Applied label encoding to {len(categorical_cols)} columns")
+            elif categorical_encoding == 'target':
+                # Target encoding (simplified)
+                for col in categorical_cols:
+                    target_mean = y.groupby(X[col]).mean()
+                    X[col] = X[col].map(target_mean)
+                console.log(f"Applied target encoding to {len(categorical_cols)} columns")
+        
+        # Si encoding es 'auto', las columnas categóricas se pasarán tal como están a XGBoost
+        
+        # Manejar valores nulos
+        X = X.fillna(-999)  # XGBoost puede manejar valores nulos pero es mejor ser explícito
+        
+        # División de datos
+        from sklearn.model_selection import train_test_split
+        test_size = config_dict.get('testSize', 0.2)
+        val_size = config_dict.get('valSize', 0.2)
+        use_val_as_test = config_dict.get('useValAsTest', False)
+        random_state = config_dict.get('randomState', 42)
+        
+        if use_val_as_test:
+            # Solo train/test split
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=test_size, random_state=random_state, stratify=y if len(y.unique()) > 1 else None
+            )
+            X_val, y_val = None, None
+        else:
+            # Train/val/test split
+            X_temp, X_test, y_temp, y_test = train_test_split(
+                X, y, test_size=test_size, random_state=random_state, stratify=y if len(y.unique()) > 1 else None
+            )
+            val_size_adjusted = val_size / (1 - test_size)
+            X_train, X_val, y_train, y_val = train_test_split(
+                X_temp, y_temp, test_size=val_size_adjusted, random_state=random_state, 
+                stratify=y_temp if len(y_temp.unique()) > 1 else None
+            )
+        
+        console.log(f"Train set: {X_train.shape}")
+        if X_val is not None:
+            console.log(f"Validation set: {X_val.shape}")
+        console.log(f"Test set: {X_test.shape}")
+        
+        # Aplicar balanceo si está habilitado
+        apply_balancing = config_dict.get('applyBalancing', False)
+        if apply_balancing:
+            console.log("Applying data balancing...")
+            balancing_method = config_dict.get('balancingMethod', 'smote')
+            
+            if balancing_method == 'smote':
+                try:
+                    from imblearn.over_sampling import SMOTE
+                    smote = SMOTE(random_state=random_state)
+                    X_train, y_train = smote.fit_resample(X_train, y_train)
+                    console.log(f"SMOTE applied. New train shape: {X_train.shape}")
+                except ImportError:
+                    console.log("SMOTE not available, using random oversampling")
+                    from sklearn.utils import resample
+                    # Oversample minority class
+                    min_class = y_train.value_counts().idxmin()
+                    max_count = y_train.value_counts().max()
+                    train_df = pd.concat([X_train, y_train], axis=1)
+                    majority = train_df[train_df[target_column] != min_class]
+                    minority = train_df[train_df[target_column] == min_class]
+                    minority_upsampled = resample(minority, replace=True, n_samples=max_count, random_state=random_state)
+                    train_balanced = pd.concat([majority, minority_upsampled])
+                    X_train = train_balanced.drop(target_column, axis=1)
+                    y_train = train_balanced[target_column]
+            elif balancing_method == 'oversampling':
+                from sklearn.utils import resample
+                train_df = pd.concat([X_train, y_train], axis=1)
+                min_class = y_train.value_counts().idxmin()
+                max_count = y_train.value_counts().max()
+                majority = train_df[train_df[target_column] != min_class]
+                minority = train_df[train_df[target_column] == min_class]
+                minority_upsampled = resample(minority, replace=True, n_samples=max_count, random_state=random_state)
+                train_balanced = pd.concat([majority, minority_upsampled])
+                X_train = train_balanced.drop(target_column, axis=1)
+                y_train = train_balanced[target_column]
+            elif balancing_method == 'undersampling':
+                from sklearn.utils import resample
+                train_df = pd.concat([X_train, y_train], axis=1)
+                min_count = y_train.value_counts().min()
+                balanced_dfs = []
+                for class_val in y_train.unique():
+                    class_df = train_df[train_df[target_column] == class_val]
+                    class_downsampled = resample(class_df, replace=False, n_samples=min_count, random_state=random_state)
+                    balanced_dfs.append(class_downsampled)
+                train_balanced = pd.concat(balanced_dfs)
+                X_train = train_balanced.drop(target_column, axis=1)
+                y_train = train_balanced[target_column]
+        
+        # Configurar XGBoost
+        import xgboost as xgb
+        
+        # Determinar tipo de problema
+        is_classification = len(y.unique()) <= 20  # Heurística simple
+        
+        # Configurar early stopping
+        early_stopping_rounds = config_dict.get('earlyStoppingRounds', 10)
+        
+
+        # Parámetros XGBoost
+        xgb_params = {
+            'max_depth': config_dict.get('maxDepth', 6),
+            'n_estimators': config_dict.get('nEstimators', 100),
+            'learning_rate': config_dict.get('learningRate', 0.1),
+            'subsample': config_dict.get('subsample', 1.0),
+            'colsample_bytree': config_dict.get('colsampleBytree', 1.0),
+            'reg_alpha': config_dict.get('regAlpha', 0),
+            'reg_lambda': config_dict.get('regLambda', 1),
+            'random_state': random_state,
+            'n_jobs': -1,
+            'early_stopping_rounds': early_stopping_rounds if X_val is not None else None,
+        }
+        
+        if is_classification:
+            if len(y.unique()) == 2:
+                xgb_params['objective'] = 'binary:logistic'
+                xgb_params['eval_metric'] = 'logloss'
+                model = xgb.XGBClassifier(**xgb_params)
+            else:
+                xgb_params['objective'] = 'multi:softprob'
+                xgb_params['eval_metric'] = 'mlogloss'
+                model = xgb.XGBClassifier(**xgb_params)
+                
+            # Balance de clases
+            scale_pos_weight = config_dict.get('scalePositiveWeight', 1)
+            if scale_pos_weight != 1 and len(y.unique()) == 2:
+                xgb_params['scale_pos_weight'] = scale_pos_weight
+        else:
+            xgb_params['objective'] = 'reg:squarederror'
+            xgb_params['eval_metric'] = 'rmse'
+            model = xgb.XGBRegressor(**xgb_params)
+        
+        console.log(f"Training {'classification' if is_classification else 'regression'} model")
+        console.log(f"XGBoost parameters: {xgb_params}")
+        
+        eval_set = [(X_train, y_train)]
+        if X_val is not None:
+            eval_set.append((X_val, y_val))
+        
+        # Entrenar modelo
+        model.fit(
+            X_train, y_train,
+            eval_set=eval_set,
+            verbose=False
+        )
+        
+        console.log("✅ Model training completed")
+        
+        # Hacer predicciones
+        y_train_pred = model.predict(X_train)
+        y_test_pred = model.predict(X_test)
+        if X_val is not None:
+            y_val_pred = model.predict(X_val)
+        
+        # Calcular métricas
+        if is_classification:
+            from sklearn.metrics import accuracy_score, precision_recall_fscore_support, confusion_matrix
+            
+            # Métricas de test
+            accuracy = float(accuracy_score(y_test, y_test_pred))
+            precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_test_pred, average='weighted')
+            cm = confusion_matrix(y_test, y_test_pred)
+            
+            # Métricas de entrenamiento
+            train_accuracy = float(accuracy_score(y_train, y_train_pred))
+            val_accuracy = None
+            if X_val is not None:
+                val_accuracy = float(accuracy_score(y_val, y_val_pred))
+            
+            # Feature importance
+            feature_importance = []
+            for i, feature in enumerate(X_train.columns):
+                importance = float(model.feature_importances_[i])
+                feature_importance.append({'feature': feature, 'importance': importance})
+            
+            # Ordenar por importancia
+            feature_importance.sort(key=lambda x: x['importance'], reverse=True)
+            
+            results = {
+                'accuracy': accuracy,
+                'precision': float(precision),
+                'recall': float(recall),
+                'f1Score': float(f1),
+                'confusionMatrix': cm.tolist(),
+                'classNames': [str(c) for c in model.classes_],
+                'featureImportance': feature_importance,
+                'trainAccuracy': train_accuracy,
+                'valAccuracy': val_accuracy,
+                'modelType': 'classification'
+            }
+        else:
+            from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+            
+            # Métricas de test
+            mse = mean_squared_error(y_test, y_test_pred)
+            mae = mean_absolute_error(y_test, y_test_pred)
+            r2 = r2_score(y_test, y_test_pred)
+            
+            # Métricas de entrenamiento
+            train_mse = mean_squared_error(y_train, y_train_pred)
+            train_r2 = r2_score(y_train, y_train_pred)
+            val_r2 = None
+            if X_val is not None:
+                val_r2 = r2_score(y_val, y_val_pred)
+            
+            # Feature importance
+            feature_importance = []
+            for i, feature in enumerate(X_train.columns):
+                importance = float(model.feature_importances_[i])
+                feature_importance.append({'feature': feature, 'importance': importance})
+            
+            feature_importance.sort(key=lambda x: x['importance'], reverse=True)
+            
+            results = {
+                'mse': float(mse),
+                'mae': float(mae),
+                'r2Score': float(r2),
+                'rmse': float(mse ** 0.5),
+                'featureImportance': feature_importance,
+                'trainR2': float(train_r2),
+                'valR2': val_r2,
+                'modelType': 'regression'
+            }
+        
+        console.log("📊 Metrics calculated successfully")
+        return results
+        
+    except Exception as e:
+        console.log(f"❌ Error in XGBoost training: {str(e)}")
+        import traceback
+        console.log(f"Traceback: {traceback.format_exc()}")
+        raise e
 `;
 // Pyodide initialization client and utilities
 // Allows running Python code and converting results to JS objects
@@ -305,7 +682,7 @@ export function initPyodide(): PyodideContext & { _pyodide?: any } {
       });
       await _pyodide.loadPackage(['pandas', 'matplotlib', 'micropip', 'scipy']);
       const micropip = _pyodide.pyimport("micropip");
-      await micropip.install('seaborn');
+      await micropip.install(['seaborn', 'xgboost', 'scikit-learn', 'imbalanced-learn']);
       await _pyodide.runPythonAsync(PY_HELPERS);
     })();
   }
@@ -350,17 +727,33 @@ export function initPyodide(): PyodideContext & { _pyodide?: any } {
     return result.toJs ? result.toJs({}) : result;
   };
   
-  const generateCorrelationPlot = async (rows: any[], method: string = 'pearson'): Promise<string> => {
+  const generateCorrelationPlot = async (rows: any[], method: string = 'pearson', sizeMultiplier: number = 1.0): Promise<string> => {
     await _ready;
     if (!_pyodide) throw new Error('Pyodide not initialized');
     _pyodide.globals.set('___correlation_rows', rows);
     _pyodide.globals.set('___correlation_method', method);
+    _pyodide.globals.set('___size_multiplier', sizeMultiplier);
     try {
-      const result = await _pyodide.runPythonAsync(`generate_correlation_plot(___correlation_rows, ___correlation_method)`);
+      const result = await _pyodide.runPythonAsync(`generate_correlation_plot(___correlation_rows, ___correlation_method, ___size_multiplier)`);
       return result;
     } catch (error) {
       console.error('Error generating correlation plot:', error);
       throw new Error(`Error generating correlation plot: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const calculateTargetCorrelations = async (rows: any[], targetColumn: string, method: string = 'pearson'): Promise<any[]> => {
+    await _ready;
+    if (!_pyodide) throw new Error('Pyodide no inicializado');
+    _pyodide.globals.set('___target_rows', rows);
+    _pyodide.globals.set('___target_column', targetColumn);
+    _pyodide.globals.set('___target_method', method);
+    try {
+      const result = await _pyodide.runPythonAsync(`calculate_target_correlations(___target_rows, ___target_column, ___target_method)`);
+      return result.toJs ? result.toJs({}) : result;
+    } catch (error) {
+      console.error('Error calculating target correlations:', error);
+      return [];
     }
   };
 
@@ -400,7 +793,29 @@ export function initPyodide(): PyodideContext & { _pyodide?: any } {
     }
   };
 
-  return { ready: _ready, runPython, loadCSV, analyzeData, parseCSVText, writeCSVAndParse, generateCorrelationPlot, cleanData, _pyodide } as any;
+  const trainXGBoost = async (rows: any[], config: any): Promise<any> => {
+    await _ready;
+    if (!_pyodide) throw new Error('Pyodide no inicializado');
+    
+    console.log('🤖 Sending data to Python for XGBoost training...');
+    console.log('Rows count:', rows.length);
+    console.log('ML Config:', config);
+    
+    _pyodide.globals.set('___ml_rows', rows);
+    _pyodide.globals.set('___ml_config', config);
+    
+    try {
+      const result = await _pyodide.runPythonAsync(`train_xgboost_model(___ml_rows, ___ml_config)`);
+      const jsResult = result.toJs ? result.toJs({}) : result;
+      console.log('📥 Received ML results:', jsResult);
+      return jsResult;
+    } catch (error) {
+      console.error('❌ Python error during XGBoost training:', error);
+      throw new Error(`Error entrenando modelo XGBoost: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
+  };
+
+  return { ready: _ready, runPython, loadCSV, analyzeData, parseCSVText, writeCSVAndParse, generateCorrelationPlot, calculateTargetCorrelations, cleanData, trainXGBoost, _pyodide } as any;
 }
 
 export const pyodideContext = initPyodide();

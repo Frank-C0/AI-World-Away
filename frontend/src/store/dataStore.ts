@@ -50,17 +50,69 @@ export interface DataCleaningConfig {
   isEnabled: boolean; // whether cleaning is enabled
 }
 
+// Configuración de entrenamiento ML
+export interface MLTrainingConfig {
+  targetColumn: string | null;
+  featureColumns: string[];
+  testSize: number; // 0.2 = 20%
+  valSize: number; // 0.2 = 20%
+  useValAsTest: boolean;
+  applyBalancing: boolean;
+  balancingMethod: 'smote' | 'undersampling' | 'oversampling';
+  categoricalEncoding: 'auto' | 'onehot' | 'label' | 'target';
+  // Parámetros XGBoost
+  maxDepth: number;
+  nEstimators: number;
+  learningRate: number;
+  subsample: number;
+  colsampleBytree: number;
+  regAlpha: number; // L1 regularization
+  regLambda: number; // L2 regularization
+  scalePositiveWeight: number; // para balance de clases
+  earlyStoppingRounds: number;
+  randomState: number;
+}
+
+export interface MLResults {
+  // Métricas de clasificación
+  accuracy?: number;
+  precision?: number;
+  recall?: number;
+  f1Score?: number;
+  confusionMatrix?: number[][];
+  classNames?: string[];
+  trainAccuracy?: number;
+  valAccuracy?: number;
+  
+  // Métricas de regresión
+  mse?: number;
+  mae?: number;
+  r2Score?: number;
+  rmse?: number;
+  trainR2?: number;
+  valR2?: number;
+  
+  // Común
+  featureImportance: { feature: string; importance: number }[];
+  modelType: 'classification' | 'regression';
+}
+
 export interface GlobalDataState {
-  data: DataRow[];                 // processed rows (clean or raw)
-  rawRows: any | null;             // original copy (in case needed)
-  cleanedRows: DataRow[] | null;   // data after cleaning
-  stats: DataStats | null;         // analysis
-  loading: boolean;                // loading dataset or pyodide
-  error: string | null;            // loading/analysis errors
-  columnVisibility: VisibilityState; // table UI preferences
-  pyodideReady: boolean;           // indicates if pyodide finished background init
-  cleaningConfig: DataCleaningConfig; // cleaning configuration
-  showCleanedData: boolean;        // toggle between clean/raw data in the table
+  data: DataRow[];            // Filas procesadas (puede ser limpia o cruda)
+  rawRows: any | null;        // Copia original (por si se requiere)
+  cleanedRows: DataRow[] | null; // Datos después de limpieza
+  stats: DataStats | null;    // Análisis
+  loading: boolean;           // Cargando dataset o pyodide
+  error: string | null;       // Errores de carga/análisis
+  columnVisibility: VisibilityState; // Preferencias UI tabla
+  pyodideReady: boolean;      // Indica si pyodide terminó init en background
+  cleaningConfig: DataCleaningConfig; // Configuración de limpieza
+  showCleanedData: boolean;   // Ver datos limpios o crudos en tabla
+  
+  // ML Training
+  mlConfig: MLTrainingConfig;
+  mlResults: MLResults | null;
+  mlTraining: boolean;
 
   // Basic setters
   setData: (data: DataRow[]) => void;
@@ -73,6 +125,12 @@ export interface GlobalDataState {
   setCleaningConfig: (config: Partial<DataCleaningConfig>) => void;
   setShowCleanedData: (show: boolean) => void;
   setCleanedRows: (rows: DataRow[] | null) => void;
+  
+  // ML Training
+  setMLConfig: (config: Partial<MLTrainingConfig>) => void;
+  setMLResults: (results: MLResults | null) => void;
+  setMLTraining: (training: boolean) => void;
+  trainXGBoostModel: () => Promise<void>;
 
   // Utilities
   generateSampleData: () => DataRow[];
@@ -106,6 +164,30 @@ export const useDataStore = create<GlobalDataState>((set, get) => ({
     columnTypes: {},
     isEnabled: false,
   },
+  
+  // ML Training
+  mlConfig: {
+    targetColumn: null,
+    featureColumns: [],
+    testSize: 0.2,
+    valSize: 0.2,
+    useValAsTest: false,
+    applyBalancing: false,
+    balancingMethod: 'smote',
+    categoricalEncoding: 'auto',
+    maxDepth: 6,
+    nEstimators: 100,
+    learningRate: 0.1,
+    subsample: 1.0,
+    colsampleBytree: 1.0,
+    regAlpha: 0,
+    regLambda: 1,
+    scalePositiveWeight: 1,
+    earlyStoppingRounds: 10,
+    randomState: 42,
+  },
+  mlResults: null,
+  mlTraining: false,
 
   setData: (data) => set({ data }),
   setRawRows: (rawRows) => set({ rawRows }),
@@ -264,5 +346,41 @@ export const useDataStore = create<GlobalDataState>((set, get) => ({
     }
     const colAnalysis = stats?.columns.find(c => c.name === columnName);
     return colAnalysis?.isNumeric ? 'numeric' : 'categorical';
+  },
+  
+  // ML Training functions
+  setMLConfig: (updates) => set(state => ({ 
+    mlConfig: { ...state.mlConfig, ...updates } 
+  })),
+  setMLResults: (mlResults) => set({ mlResults }),
+  setMLTraining: (mlTraining) => set({ mlTraining }),
+  
+  trainXGBoostModel: async () => {
+    const { data, mlConfig, setMLTraining, setMLResults, setError } = get();
+    
+    if (!data.length || !mlConfig.targetColumn || mlConfig.featureColumns.length === 0) {
+      setError('Faltan datos o configuración para entrenar el modelo');
+      return;
+    }
+    
+    try {
+      setMLTraining(true);
+      setError(null);
+      
+      const { pyodideContext } = await import('../pyodideClient');
+      await pyodideContext.ready;
+      
+      console.log('🤖 Iniciando entrenamiento XGBoost...');
+      const results = await pyodideContext.trainXGBoost(data, mlConfig);
+      
+      console.log('✅ Entrenamiento completado:', results);
+      setMLResults(results);
+      
+    } catch (err) {
+      console.error('❌ Error entrenando modelo:', err);
+      setError(`Error entrenando modelo: ${err instanceof Error ? err.message : 'Error desconocido'}`);
+    } finally {
+      setMLTraining(false);
+    }
   },
 }));

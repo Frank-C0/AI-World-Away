@@ -8,6 +8,7 @@ import Graficos from './Components/Charts/Graficos';
 import DataStatsModal from './Components/Tables/DataStatsModal';
 import CorrelationModal from './Components/Charts/CorrelationModal';
 import DataCleaning from './Components/DataCleaning/DataCleaning';
+import MLTraining from './Components/MachineLearning/MLTraining';
 import Modal from './Components/Common/Modal';
 import { useUIStore } from './store/uiStore';
 import { useDataStore } from './store/dataStore';
@@ -62,6 +63,9 @@ function App() {
           <button onClick={() => toggleModal('correlation')} className={activeModal === 'correlation' ? 'active' : ''} disabled={!stats}>
             {activeModal === 'correlation' ? '✕ Correlation' : '🔄 Correlation'}
           </button>
+          <button onClick={() => toggleModal('ml')} className={activeModal === 'ml' ? 'active' : ''} disabled={!stats}>
+            {activeModal === 'ml' ? '✕ ML Training' : '🤖 ML Training'}
+          </button>
           <button onClick={() => toggleModal('stats')} className={activeModal === 'stats' ? 'active' : ''} disabled={!stats}>
             {activeModal === 'stats' ? '✕ Statistics' : '📑 Statistics'}
           </button>
@@ -94,6 +98,8 @@ function App() {
         <DataCleaning />
       </Modal>
       
+
+      
       <Modal id="correlation" title="🔄 Matriz de Correlación" widthClass="w-[900px]" heightClass="h-[640px]">
         <CorrelationModal embedded />
       </Modal>
@@ -101,6 +107,16 @@ function App() {
       {/* ✅ PANEL: Dataset Statistics */}
       <Modal id="stats" title="📑 Dataset Statistics" widthClass="w-[1000px]" heightClass="max-h-[80vh]">
         <DataStatsModal embedded />
+      </Modal>
+      
+            {/* ✅ PANEL: Machine Learning Training */}
+      <Modal 
+        id="ml" 
+        title="🤖 XGBoost Model Training" 
+        widthClass="w-[1200px]" 
+        heightClass="max-h-[85vh]"
+      >
+        <MLTraining />
       </Modal>
 
       {/* ✅ INTRO ANIMATION */}
