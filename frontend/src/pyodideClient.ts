@@ -111,7 +111,9 @@ export function initPyodide(): PyodideContext & { _pyodide?: any } {
       _pyodide = await (window as any).loadPyodide({
         indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.28.3/full/'
       });
-      await _pyodide.loadPackage(['pandas', 'matplotlib', 'seaborn']);
+      await _pyodide.loadPackage(['pandas', 'matplotlib', 'micropip']);
+      const micropip = _pyodide.pyimport("micropip");
+      await micropip.install('seaborn');
       await _pyodide.runPythonAsync(PY_HELPERS);
     })();
   }
