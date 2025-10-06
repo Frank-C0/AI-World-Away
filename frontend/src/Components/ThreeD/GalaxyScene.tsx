@@ -77,10 +77,10 @@ interface GalaxySceneProps {
 }
 
 const GalaxyScene: React.FC<GalaxySceneProps> = ({ totalPlanets }) => {
-  // Dividir el total en 3 colores (aproximadamente 33% cada uno)
+  // Split the total into 3 colors (approximately 33% each)
   const countRed = Math.floor(totalPlanets / 3);
   const countGreen = Math.floor(totalPlanets / 3);
-  const countYellow = totalPlanets - countRed - countGreen; // El resto va a amarillo
+  const countYellow = totalPlanets - countRed - countGreen; 
 
   return (
     <Canvas camera={{ position: [0, 0, 70], fov: 60 }}>

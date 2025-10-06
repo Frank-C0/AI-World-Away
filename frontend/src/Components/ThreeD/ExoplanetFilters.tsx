@@ -1,4 +1,3 @@
-// src/components/ExoplanetFilters.tsx
 import React, { useState } from 'react';
 
 type Filters = {
@@ -23,7 +22,7 @@ const ExoplanetFilters: React.FC<ExoplanetFiltersProps> = ({
   filtrosActuales,
   dataRanges
 }) => {
-  // Estado temporal para los filtros (solo se aplican al presionar el botón)
+  // only applied when pressing the button
   const [tempFilters, setTempFilters] = useState<Filters>(filtrosActuales);
 
   const handleChange = (field: keyof Filters, value: string | number) => {
@@ -41,21 +40,21 @@ const ExoplanetFilters: React.FC<ExoplanetFiltersProps> = ({
 
   return (
     <div style={{ padding: '20px', border: '1px solid #0ff', marginBottom: '20px', borderRadius: '8px' }}>
-      <h3 style={{ color: '#0ff', marginTop: 0 }}>Filtros</h3>
+      <h3 style={{ color: '#0ff', marginTop: 0 }}>Filters</h3>
       
-      {/* Disposición */}
+      {/* Disposition */}
       <div style={{ marginBottom: '15px' }}>
         <label>
-          <strong>Disposición: </strong>
+          <strong>Disposition: </strong>
           <select
             value={tempFilters.koiDisposition}
             onChange={(e) => handleChange('koiDisposition', e.target.value)}
             style={{ marginLeft: '10px', padding: '5px', backgroundColor: '#1a1a2e', color: 'white', border: '1px solid #0ff' }}
           >
-            <option value="all">Todos</option>
-            <option value="CONFIRMED">Confirmado</option>
-            <option value="CANDIDATE">Candidato</option>
-            <option value="FALSE POSITIVE">Falso Positivo</option>
+            <option value="all">All</option>
+            <option value="CONFIRMED">Confirmed</option>
+            <option value="CANDIDATE">Candidate</option>
+            <option value="FALSE POSITIVE">False Positive</option>
           </select>
         </label>
       </div>
@@ -63,7 +62,7 @@ const ExoplanetFilters: React.FC<ExoplanetFiltersProps> = ({
       {/* Score */}
       <div style={{ marginBottom: '15px' }}>
         <label style={{ display: 'block', marginBottom: '5px' }}>
-          <strong>Confianza (Score): </strong>
+          <strong>Confidence (Score): </strong>
           <span style={{ color: '#0ff' }}>
             {tempFilters.koiScoreMin.toFixed(2)} - {tempFilters.koiScoreMax.toFixed(2)}
           </span>
@@ -90,10 +89,10 @@ const ExoplanetFilters: React.FC<ExoplanetFiltersProps> = ({
         </div>
       </div>
 
-      {/* Periodo orbital */}
+      {/* Orbital period */}
       <div style={{ marginBottom: '15px' }}>
         <label style={{ display: 'block', marginBottom: '5px' }}>
-          <strong>Periodo Orbital (días): </strong>
+          <strong>Orbital Period (days): </strong>
           <span style={{ color: '#0ff' }}>
             {tempFilters.koiPeriodMin.toFixed(1)} - {tempFilters.koiPeriodMax.toFixed(1)}
           </span>
@@ -120,10 +119,10 @@ const ExoplanetFilters: React.FC<ExoplanetFiltersProps> = ({
         </div>
       </div>
 
-      {/* Radio planetario */}
+      {/* Planetary radius */}
       <div style={{ marginBottom: '15px' }}>
         <label style={{ display: 'block', marginBottom: '5px' }}>
-          <strong>Radio Planetario (R⊕): </strong>
+          <strong>Planetary Radius (R⊕): </strong>
           <span style={{ color: '#0ff' }}>
             {tempFilters.koiPradMin.toFixed(2)} - {tempFilters.koiPradMax.toFixed(2)}
           </span>
@@ -150,10 +149,10 @@ const ExoplanetFilters: React.FC<ExoplanetFiltersProps> = ({
         </div>
       </div>
 
-      {/* Temperatura de equilibrio */}
+      {/* Equilibrium temperature */}
       <div style={{ marginBottom: '15px' }}>
         <label style={{ display: 'block', marginBottom: '5px' }}>
-          <strong>Temperatura (K): </strong>
+          <strong>Temperature (K): </strong>
           <span style={{ color: '#0ff' }}>
             {tempFilters.koiTeqMin.toFixed(0)} - {tempFilters.koiTeqMax.toFixed(0)}
           </span>
@@ -180,10 +179,10 @@ const ExoplanetFilters: React.FC<ExoplanetFiltersProps> = ({
         </div>
       </div>
 
-      {/* Insolación */}
+      {/* Insolation */}
       <div style={{ marginBottom: '15px' }}>
         <label style={{ display: 'block', marginBottom: '5px' }}>
-          <strong>Insolación (F⊕): </strong>
+          <strong>Insolation (F⊕): </strong>
           <span style={{ color: '#0ff' }}>
             {tempFilters.koiInsolMin.toFixed(2)} - {tempFilters.koiInsolMax.toFixed(2)}
           </span>
@@ -210,10 +209,10 @@ const ExoplanetFilters: React.FC<ExoplanetFiltersProps> = ({
         </div>
       </div>
 
-      {/* Temperatura efectiva estelar */}
+      {/* Stellar effective temperature */}
       <div style={{ marginBottom: '15px' }}>
         <label style={{ display: 'block', marginBottom: '5px' }}>
-          <strong>Temp. Estelar (K): </strong>
+          <strong>Stellar Temp. (K): </strong>
           <span style={{ color: '#0ff' }}>
             {tempFilters.koiSteffMin.toFixed(0)} - {tempFilters.koiSteffMax.toFixed(0)}
           </span>
@@ -240,10 +239,10 @@ const ExoplanetFilters: React.FC<ExoplanetFiltersProps> = ({
         </div>
       </div>
 
-      {/* Radio estelar */}
+      {/* Stellar radius */}
       <div style={{ marginBottom: '20px' }}>
         <label style={{ display: 'block', marginBottom: '5px' }}>
-          <strong>Radio Estelar (R☉): </strong>
+          <strong>Stellar Radius (R☉): </strong>
           <span style={{ color: '#0ff' }}>
             {tempFilters.koiSradMin.toFixed(2)} - {tempFilters.koiSradMax.toFixed(2)}
           </span>
@@ -270,7 +269,7 @@ const ExoplanetFilters: React.FC<ExoplanetFiltersProps> = ({
         </div>
       </div>
 
-      {/* Botones de acción */}
+      {/* Action buttons */}
       <div style={{ display: 'flex', gap: '10px' }}>
         <button
           onClick={handleApply}
@@ -296,7 +295,7 @@ const ExoplanetFilters: React.FC<ExoplanetFiltersProps> = ({
             e.currentTarget.style.transform = 'scale(1)';
           }}
         >
-          🔍 Aplicar Filtros
+          🔍 Apply Filters
         </button>
         
         <button

@@ -21,7 +21,7 @@ const Galaxy = ({ totalPlanets }: GalaxyProps) => {
     const colors = ['#ff4d4d', '#00ff7f', '#ffff66'];
     const list = [];
     
-    // Usar totalPlanets en lugar de 1000
+    // Use totalPlanets after being filtered
     for (let i = 0; i < totalPlanets; i++) {
       const radius = 100 * Math.random();
       const angle1 = Math.random() * Math.PI * 2;
@@ -33,7 +33,7 @@ const Galaxy = ({ totalPlanets }: GalaxyProps) => {
       list.push({ position: [x, y, z] as [number, number, number], color });
     }
     return list;
-  }, [totalPlanets]); // Se regenera cuando cambia totalPlanets
+  }, [totalPlanets]); 
 
   return (
     <>
@@ -49,8 +49,8 @@ const Interfaz = () => {
   const [totalPlanets, setTotalPlanets] = useState(0);
 
   const handleFilteredDataChange = (total: number) => {
-    console.log("📊 Total de exoplanetas filtrados:", total);
-    console.log("🌌 Actualizando galaxia con", total, "planetas");
+    console.log("📊 Total filtered exoplanets:", total);
+    console.log("🌌 Updating galaxy with", total, "planets");
     setTotalPlanets(total);
   };
 
@@ -69,7 +69,7 @@ const Interfaz = () => {
             background: 'radial-gradient(circle, #000010, #000)',
           }}
         >
-          <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Mapa Galáctico de Exoplanetas</h1>
+          <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Galactic Exoplanet Map</h1>
           <button
             onClick={() => setShowMap(true)}
             style={{
@@ -84,12 +84,12 @@ const Interfaz = () => {
               transition: '0.3s',
             }}
           >
-            Ver mapa
+            View Map
           </button>
         </div>
       ) : (
         <>
-          {/* ✅ Panel lateral con datos procesados */}
+          {/* ✅ Side panel with processed data */}
           <div
             style={{
               position: 'absolute',
@@ -105,11 +105,11 @@ const Interfaz = () => {
               zIndex: 10,
             }}
           >
-            {/* 🔍 ExoplanetData notifica cambios via callback */}
+            {/* 🔍 ExoplanetData notifies changes via callback */}
             <ExoplanetData onFilteredDataChange={handleFilteredDataChange} />
           </div>
 
-          {/* 🌌 Canvas 3D */}
+          {/* 🌌 3D Canvas */}
           <Canvas
             camera={{ position: [0, 0, 120], fov: 60 }}
             style={{
@@ -124,7 +124,7 @@ const Interfaz = () => {
             <ambientLight intensity={0.5} />
             <pointLight position={[50, 50, 50]} intensity={1.2} />
             <Stars radius={300} depth={100} count={5000} factor={4} saturation={0} fade />
-            {/* Galaxy ahora recibe totalPlanets y se actualiza dinámicamente */}
+            {/* Galaxy now receives totalPlanets and updates dynamically */}
             <Galaxy totalPlanets={totalPlanets} />
             <OrbitControls 
               enableZoom 

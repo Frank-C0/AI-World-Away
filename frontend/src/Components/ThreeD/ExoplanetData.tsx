@@ -1,4 +1,3 @@
-// src/components/ExoplanetData.tsx
 import React, { useEffect, useState } from 'react';
 import { useDataStore } from '../../store/dataStore';
 import ExoplanetFilters from './ExoplanetFilters';
@@ -18,11 +17,9 @@ interface ExoplanetDataProps {
     onFilteredDataChange?: (total: number) => void;
     }
 
-    // helper: obtiene valor de planet para diferentes nombres (Map or object)
     const getField = (planet: any, keys: string[]): any => {
     if (!planet) return undefined;
 
-    // Si es Map-like
     if (typeof planet.get === 'function') {
         for (const k of keys) {
         try {
@@ -34,7 +31,6 @@ interface ExoplanetDataProps {
         }
     }
 
-    // Propiedades directas (snake_case, camelCase)
     for (const k of keys) {
         if (planet[k] !== undefined) return planet[k];
     }
@@ -42,7 +38,6 @@ interface ExoplanetDataProps {
     return undefined;
     };
 
-    // helper para obtener min/max de un array de números (si empty -> fallback)
     const minMaxOrFallback = (arr: number[], fallbackMin = 0, fallbackMax = 1) => {
     if (!arr || arr.length === 0) return { min: fallbackMin, max: fallbackMax };
     return { min: Math.min(...arr), max: Math.max(...arr) };
@@ -54,14 +49,13 @@ interface ExoplanetDataProps {
     const [filters, setFilters] = useState<Filters | null>(null);
     const [dataRanges, setDataRanges] = useState<Filters | null>(null);
 
-    // 1) Cuando llegan los datos, calcula rangos reales y setea filtros iniciales
+    // 1) Process: data arrives, calculate real ranges and set initial filters
     useEffect(() => {
         if (!data || data.length === 0) return;
 
-        console.log("✅ Datos originales cargados:", data.length);
-        console.log("Ejemplo de dato (raw):", data[0]);
+        console.log("- Original data loaded:", data.length);
+        console.log("Example data (raw):", data[0]);
 
-        // recoger valores por campo
         const scores: number[] = [];
         const periods: number[] = [];
         const prads: number[] = [];
@@ -115,10 +109,10 @@ interface ExoplanetDataProps {
         setDataRanges(ranges);
         setFilters((prev) => prev ?? { ...ranges });
 
-        console.log("📊 Rangos calculados:", ranges);
+        console.log("📊 Calculated ranges:", ranges);
     }, [data]);
 
-    // 2) Filtrado real y notificación al componente padre
+    // 2) Filter and notify parent component
     useEffect(() => {
         if (!data || data.length === 0) {
         if (onFilteredDataChange) {
@@ -158,16 +152,15 @@ interface ExoplanetDataProps {
         return true;
         });
 
-        console.log("🔎 Exoplanetas después del filtro:", filtered.length);
-        if (filtered.length > 0) console.log("Ejemplo filtrado:", filtered[0]);
-        else console.log("⚠️ No se encontró ningún exoplaneta que cumpla los filtros.");
+        console.log("Exoplanets after filtering:", filtered.length);
+        if (filtered.length > 0) console.log("Filtered example:", filtered[0]);
+        else console.log("⚠️ No exoplanets found matching the filters.");
 
         setExoplanets(filtered);
 
-        // Notificar al componente padre (Interfaz) el total de planetas filtrados
         if (onFilteredDataChange) {
         onFilteredDataChange(filtered.length);
-        console.log("✅ Notificando actualización a Interfaz:", filtered.length, "planetas");
+        console.log("Notifying Interface update:", filtered.length, "planets");
         }
     }, [data, filters, onFilteredDataChange]);
 
@@ -175,15 +168,15 @@ interface ExoplanetDataProps {
         setFilters(newFilters);
     };
 
-    if (loading) return <p>Cargando datos...</p>;
-    if (error) return <p>Error al cargar los datos: {error}</p>;
+    if (loading) return <p>Loading data...</p>;
+    if (error) return <p>Error loading data: {error}</p>;
 
     return (
         <div>
-        <h2 style={{ color: '#0ff', marginTop: 0 }}>Exoplanetas</h2>
+        <h2 style={{ color: '#0ff', marginTop: 0 }}>Exoplanets</h2>
 
         {!filters || !dataRanges ? (
-            <p>Calculando rangos a partir del dataset…</p>
+            <p>Calculating ranges from dataset…</p>
         ) : (
             <ExoplanetFilters
             onChange={handleFiltersChange}
@@ -201,7 +194,7 @@ interface ExoplanetDataProps {
             textAlign: 'center'
         }}>
             <h3 style={{ color: '#0ff', margin: '0', fontSize: '1.5rem' }}>
-            Total filtrados: <span style={{ color: '#fff' }}>{exoplanets.length}</span>
+            Total filtered: <span style={{ color: '#fff' }}>{exoplanets.length}</span>
             </h3>
         </div>
         </div>
