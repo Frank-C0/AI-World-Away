@@ -15,7 +15,7 @@ const DataCleaning: React.FC = () => {
 
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Inicializar tipos de columna cuando se carga el dataset
+  // Initialize column types when dataset loads
   useEffect(() => {
     if (stats && Object.keys(cleaningConfig.columnTypes).length === 0) {
       initializeColumnTypes();
@@ -29,8 +29,8 @@ const DataCleaning: React.FC = () => {
   if (!stats) {
     return (
       <div className="p-8 text-center">
-        <p className="text-gray-600 mb-2">No hay datos cargados</p>
-        <p className="text-sm text-gray-500">Carga un dataset desde el panel de datos</p>
+        <p className="text-gray-600 mb-2">No data loaded</p>
+        <p className="text-sm text-gray-500">Load a dataset from the data panel</p>
       </div>
     );
   }
@@ -81,9 +81,9 @@ const DataCleaning: React.FC = () => {
   return (
     <div className="p-4 space-y-4 max-h-[75vh] overflow-y-auto text-black">
       
-      {/* Configuración Global */}
+      {/* Global Configuration */}
       <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="font-semibold mb-3">🔧 Configuración General</h3>
+        <h3 className="font-semibold mb-3">🔧 General Configuration</h3>
         <div className="grid grid-cols-2 gap-4">
           <label className="flex items-center gap-2">
             <input
@@ -92,17 +92,17 @@ const DataCleaning: React.FC = () => {
               onChange={(e) => handleConfigChange({ removeDuplicates: e.target.checked })}
               className="rounded"
             />
-            <span className="text-sm">Eliminar duplicados</span>
+            <span className="text-sm">Remove duplicates</span>
           </label>
           
           <div>
-            <label className="block text-sm font-medium mb-1">Columna objetivo:</label>
+            <label className="block text-sm font-medium mb-1">Target column:</label>
             <select
               value={cleaningConfig.targetColumn || ''}
               onChange={(e) => handleConfigChange({ targetColumn: e.target.value || null })}
               className="w-full px-2 py-1 border rounded text-sm"
             >
-              <option value="">Sin objetivo específico</option>
+              <option value="">No specific target</option>
               {stats.columns.map(col => (
                 <option key={col.name} value={col.name}>{col.name}</option>
               ))}
@@ -111,9 +111,9 @@ const DataCleaning: React.FC = () => {
         </div>
       </div>
 
-      {/* Configuración de Columnas - Diseño Mejorado */}
+      {/* Column Configuration */}
       <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="font-semibold mb-3">📋 Configuración de Columnas</h3>
+        <h3 className="font-semibold mb-3">📋 Column Configuration</h3>
         <div className="space-y-4">
           {stats.columns.map(col => {
             const isSelected = cleaningConfig.selectedColumns.includes(col.name);
@@ -133,7 +133,7 @@ const DataCleaning: React.FC = () => {
 
             return (
               <div key={col.name} className="border rounded-lg p-4 bg-white">
-                {/* Header con información de la columna */}
+                {/* Column Header */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <input
@@ -145,7 +145,7 @@ const DataCleaning: React.FC = () => {
                     <div>
                       <div className="font-medium text-sm">{col.name}</div>
                       <div className="text-xs text-gray-500">
-                        {col.dtype} • {uniqueCount} únicos ({uniquePercentage}%)
+                        {col.dtype} • {uniqueCount} unique ({uniquePercentage}%)
                       </div>
                     </div>
                   </div>
@@ -157,44 +157,44 @@ const DataCleaning: React.FC = () => {
                       disabled={!isSelected}
                       className="px-2 py-1 border rounded text-sm disabled:bg-gray-100"
                     >
-                      <option value="numeric">Numérica</option>
-                      <option value="categorical">Categórica</option>
+                      <option value="numeric">Numeric</option>
+                      <option value="categorical">Categorical</option>
                     </select>
                   </div>
                 </div>
 
-                {/* Estadísticas de la columna */}
+                {/* Column Statistics */}
                 <div className="bg-gray-50 rounded p-2 mb-3 text-xs">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {col.nullCount > 0 && (
                       <div className="text-red-600">
-                        <span className="font-medium">🚫 Nulos:</span> {col.nullCount} ({nullPercentage}%)
+                        <span className="font-medium">🚫 Nulls:</span> {col.nullCount} ({nullPercentage}%)
                       </div>
                     )}
                     {effectiveType === 'numeric' && col.min !== undefined && col.max !== undefined && (
                       <div className="text-blue-600">
-                        <span className="font-medium">📊 Rango:</span> {col.min.toFixed(2)} - {col.max.toFixed(2)}
+                        <span className="font-medium">📊 Range:</span> {col.min.toFixed(2)} - {col.max.toFixed(2)}
                       </div>
                     )}
                     {effectiveType === 'categorical' && (
                       <div className="text-green-600">
-                        <span className="font-medium">🏷️ Categorías:</span> {uniqueCount}
+                        <span className="font-medium">🏷️ Categories:</span> {uniqueCount}
                       </div>
                     )}
                     <div className="text-gray-600">
-                      <span className="font-medium">🔢 Tipo:</span> {col.dtype}
+                      <span className="font-medium">🔢 Type:</span> {col.dtype}
                     </div>
                   </div>
                 </div>
 
-                {/* Configuración de limpieza */}
+                {/* Cleaning Configuration */}
                 {isSelected && (
                   <div className="space-y-3">
                     
-                    {/* Manejo de valores nulos */}
+                    {/* Null Value Handling */}
                     {col.nullCount > 0 && (
                       <div className="border rounded p-3 bg-blue-50">
-                        <div className="font-medium text-sm mb-2">🚫 Valores Nulos ({col.nullCount} filas)</div>
+                        <div className="font-medium text-sm mb-2">🚫 Null Values ({col.nullCount} rows)</div>
                         <div className="space-y-2">
                           <label className="flex items-center gap-2">
                             <input
@@ -204,7 +204,7 @@ const DataCleaning: React.FC = () => {
                               onChange={() => handleStrategyChange(col.name, { removeNulls: true, fillStrategy: 'drop' })}
                               className="rounded"
                             />
-                            <span className="text-sm">Eliminar filas con nulos</span>
+                            <span className="text-sm">Remove rows with nulls</span>
                           </label>
                           <label className="flex items-center gap-2">
                             <input
@@ -214,7 +214,7 @@ const DataCleaning: React.FC = () => {
                               onChange={() => handleStrategyChange(col.name, { removeNulls: false })}
                               className="rounded"
                             />
-                            <span className="text-sm">Rellenar valores nulos:</span>
+                            <span className="text-sm">Fill null values:</span>
                           </label>
                           {!strategy.removeNulls && (
                             <div className="ml-6">
@@ -227,13 +227,13 @@ const DataCleaning: React.FC = () => {
                               >
                                 {effectiveType === 'numeric' && (
                                   <>
-                                    <option value="mean">Promedio</option>
-                                    <option value="median">Mediana</option>
+                                    <option value="mean">Mean</option>
+                                    <option value="median">Median</option>
                                   </>
                                 )}
-                                <option value="mode">Moda (valor más común)</option>
-                                <option value="forward">Propagación hacia adelante</option>
-                                <option value="backward">Propagación hacia atrás</option>
+                                <option value="mode">Mode (most common value)</option>
+                                <option value="forward">Forward fill</option>
+                                <option value="backward">Backward fill</option>
                               </select>
                             </div>
                           )}
@@ -241,10 +241,10 @@ const DataCleaning: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Configuración específica para numéricas */}
+                    {/* Numeric Configuration */}
                     {effectiveType === 'numeric' && (
                       <div className="border rounded p-3 bg-green-50">
-                        <div className="font-medium text-sm mb-2">📊 Limpieza Numérica</div>
+                        <div className="font-medium text-sm mb-2">📊 Numeric Cleaning</div>
                         <label className="flex items-center gap-2">
                           <input
                             type="checkbox"
@@ -252,24 +252,24 @@ const DataCleaning: React.FC = () => {
                             onChange={(e) => handleStrategyChange(col.name, { removeOutliers: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">Eliminar outliers (método IQR)</span>
+                          <span className="text-sm">Remove outliers (IQR method)</span>
                         </label>
                         {col.min !== undefined && col.max !== undefined && (
                           <div className="text-xs text-gray-600 mt-1">
-                            Rango actual: {col.min.toFixed(2)} - {col.max.toFixed(2)}
+                            Current range: {col.min.toFixed(2)} - {col.max.toFixed(2)}
                           </div>
                         )}
                       </div>
                     )}
 
-                    {/* Configuración específica para categóricas */}
+                    {/* Categorical Configuration */}
                     {effectiveType === 'categorical' && (
                       <div className="border rounded p-3 bg-purple-50">
-                        <div className="font-medium text-sm mb-2">🏷️ Filtros Categóricos</div>
+                        <div className="font-medium text-sm mb-2">🏷️ Categorical Filters</div>
                         
-                        {/* Selección de categorías */}
+                        {/* Category Selection */}
                         <div className="mb-3">
-                          <div className="text-sm mb-2">Categorías a incluir:</div>
+                          <div className="text-sm mb-2">Categories to include:</div>
                           <div className="max-h-32 overflow-y-auto border rounded p-2 bg-white">
                             <div className="space-y-1">
                               {col.uniqueValues.slice(0, 20).map(value => {
@@ -294,7 +294,7 @@ const DataCleaning: React.FC = () => {
                               })}
                               {col.uniqueValues.length > 20 && (
                                 <div className="text-xs text-gray-500 italic">
-                                  ... y {col.uniqueValues.length - 20} categorías más
+                                  ... and {col.uniqueValues.length - 20} more categories
                                 </div>
                               )}
                             </div>
@@ -304,18 +304,18 @@ const DataCleaning: React.FC = () => {
                               onClick={() => handleStrategyChange(col.name, { selectedCategories: [...col.uniqueValues] })}
                               className="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 rounded"
                             >
-                              Seleccionar todas
+                              Select all
                             </button>
                             <button
                               onClick={() => handleStrategyChange(col.name, { selectedCategories: [] })}
                               className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
                             >
-                              Deseleccionar todas
+                              Deselect all
                             </button>
                           </div>
                         </div>
 
-                        {/* Agrupación de categorías raras */}
+                        {/* Rare Category Grouping */}
                         <div>
                           <label className="flex items-center gap-2 mb-2">
                             <input
@@ -324,12 +324,12 @@ const DataCleaning: React.FC = () => {
                               onChange={(e) => handleStrategyChange(col.name, { groupRareCategories: e.target.checked })}
                               className="rounded"
                             />
-                            <span className="text-sm">Agrupar categorías poco frecuentes</span>
+                            <span className="text-sm">Group rare categories</span>
                           </label>
                           {strategy.groupRareCategories && (
                             <div className="ml-6">
                               <label className="text-xs text-gray-600">
-                                Umbral (%):
+                                Threshold (%):
                                 <input
                                   type="number"
                                   min="1"
@@ -340,7 +340,7 @@ const DataCleaning: React.FC = () => {
                                 />
                               </label>
                               <div className="text-xs text-gray-500 mt-1">
-                                Categorías con menos de {strategy.rareThreshold || 5}% se agruparán como "Otros"
+                                Categories under {strategy.rareThreshold || 5}% will be grouped as "Others"
                               </div>
                             </div>
                           )}
@@ -355,28 +355,28 @@ const DataCleaning: React.FC = () => {
         </div>
       </div>
 
-      {/* Estado actual - Mejorado */}
+      {/* Current State */}
       <div className="bg-blue-50 rounded-lg p-4">
-        <h3 className="font-semibold mb-3">📊 Estado Actual del Dataset</h3>
+        <h3 className="font-semibold mb-3">📊 Current Dataset Status</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="font-medium">📁 Datos originales:</span> 
-              <span className="text-blue-600">{rawRows?.length || 0} filas</span>
+              <span className="font-medium">📁 Original data:</span> 
+              <span className="text-blue-600">{rawRows?.length || 0} rows</span>
             </div>
             {cleanedRows && (
               <div className="flex justify-between text-sm">
-                <span className="font-medium">🧹 Datos limpios:</span> 
-                <span className="text-green-600">{cleanedRows.length} filas</span>
+                <span className="font-medium">🧹 Cleaned data:</span> 
+                <span className="text-green-600">{cleanedRows.length} rows</span>
               </div>
             )}
             <div className="flex justify-between text-sm">
-              <span className="font-medium">🎯 Columnas seleccionadas:</span> 
+              <span className="font-medium">🎯 Selected columns:</span> 
               <span className="text-purple-600">{cleaningConfig.selectedColumns.length}</span>
             </div>
             {cleaningConfig.targetColumn && (
               <div className="flex justify-between text-sm">
-                <span className="font-medium">🎪 Columna objetivo:</span> 
+                <span className="font-medium">🎪 Target column:</span> 
                 <span className="text-orange-600">{cleaningConfig.targetColumn}</span>
               </div>
             )}
@@ -386,13 +386,13 @@ const DataCleaning: React.FC = () => {
             {rawRows && cleanedRows && (
               <>
                 <div className="flex justify-between text-sm">
-                  <span className="font-medium">📉 Reducción:</span> 
+                  <span className="font-medium">📉 Reduction:</span> 
                   <span className="text-red-600">
                     -{((rawRows.length - cleanedRows.length) / rawRows.length * 100).toFixed(1)}%
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="font-medium">💾 Filas conservadas:</span> 
+                  <span className="font-medium">💾 Rows retained:</span> 
                   <span className="text-green-600">
                     {((cleanedRows.length / rawRows.length) * 100).toFixed(1)}%
                   </span>
@@ -400,9 +400,9 @@ const DataCleaning: React.FC = () => {
               </>
             )}
             
-            {/* Conteo de configuraciones activas */}
+            {/* Active configuration count */}
             <div className="flex justify-between text-sm">
-              <span className="font-medium">⚙️ Estrategias activas:</span> 
+              <span className="font-medium">⚙️ Active strategies:</span> 
               <span className="text-indigo-600">
                 {Object.keys(cleaningConfig.columnStrategies).length}
               </span>
@@ -410,35 +410,35 @@ const DataCleaning: React.FC = () => {
           </div>
         </div>
         
-        {/* Indicadores de configuración activa */}
+        {/* Active Config Indicators */}
         {cleaningConfig.isEnabled && (
           <div className="mt-3 pt-3 border-t border-blue-200">
             <div className="flex flex-wrap gap-2">
               {cleaningConfig.removeDuplicates && (
                 <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                  🗑️ Sin duplicados
+                  🗑️ No duplicates
                 </span>
               )}
               {Object.entries(cleaningConfig.columnStrategies).map(([col, strategy]) => (
                 <div key={col} className="flex gap-1">
                   {strategy.removeNulls && (
                     <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
-                      {col}: Sin nulos
+                      {col}: No nulls
                     </span>
                   )}
                   {strategy.removeOutliers && (
                     <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
-                      {col}: Sin outliers
+                      {col}: No outliers
                     </span>
                   )}
                   {strategy.selectedCategories && strategy.selectedCategories.length < (stats?.columns.find(c => c.name === col)?.uniqueValues.length || 0) && (
                     <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
-                      {col}: Filtrado ({strategy.selectedCategories.length} cats)
+                      {col}: Filtered ({strategy.selectedCategories.length} cats)
                     </span>
                   )}
                   {strategy.groupRareCategories && (
                     <span className="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded-full">
-                      {col}: Agrupado
+                      {col}: Grouped
                     </span>
                   )}
                 </div>
@@ -448,13 +448,13 @@ const DataCleaning: React.FC = () => {
         )}
       </div>
 
-      {/* Botón de Aplicar Limpieza */}
+      {/* Apply Cleaning Button */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-semibold">🚀 Aplicar Limpieza</h3>
+            <h3 className="font-semibold">🚀 Apply Cleaning</h3>
             <p className="text-sm text-gray-600">
-              Aplica todas las configuraciones de limpieza al dataset
+              Apply all cleaning configurations to the dataset
             </p>
           </div>
           
@@ -466,10 +466,10 @@ const DataCleaning: React.FC = () => {
             {isProcessing ? (
               <>
                 <span className="animate-spin mr-2">⚙️</span>
-                Procesando...
+                Processing...
               </>
             ) : (
-              'Aplicar Limpieza'
+              'Apply Cleaning'
             )}
           </button>
         </div>

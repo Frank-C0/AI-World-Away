@@ -1,5 +1,5 @@
-// Cliente de inicialización y utilidades para Pyodide
-// Permite ejecutar código Python y convertir resultados a objetos JS
+// Pyodide initialization client and utilities
+// Allows executing Python code and converting results into JS objects
 
 export interface PyodideContext {
   ready: Promise<void>;
@@ -12,10 +12,10 @@ export interface PyodideContext {
   cleanData: (rows: any[], config: any) => Promise<any[]>;
 }
 
-let _pyodide: any; // instancia pyodide
+let _pyodide: any; // pyodide instance
 let _ready: Promise<void> | null = null;
 
-// Código Python reducido: sólo pandas (requiere que pandas se haya cargado correctamente)
+// Minimal Python code: only pandas (requires pandas to be properly loaded)
 const PY_HELPERS = `
 import io, math, pandas as pd
 import base64
@@ -57,28 +57,28 @@ def analyze(rows):
 
 def generate_correlation_plot(rows, method='pearson'):
     """
-    Genera un gráfico de correlación usando seaborn y lo devuelve como una imagen base64
+    Generates a correlation heatmap using seaborn and returns it as a base64 image.
     methods: 'pearson', 'kendall', 'spearman'
     """
     import matplotlib.pyplot as plt
     import seaborn as sns
     import io
     
-    # Crear DataFrame y filtrar solo columnas numéricas
+    # Create DataFrame and filter only numeric columns
     df = pd.DataFrame(rows)
     numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
     
     if len(numeric_cols) < 2:
-        return "error: Se requieren al menos 2 columnas numéricas para calcular correlaciones"
+        return "error: At least 2 numeric columns are required to calculate correlations"
     
-    # Calcular matriz de correlación
+    # Compute correlation matrix
     corr_df = df[numeric_cols].corr(method=method)
     
-    # Crear figura
+    # Create figure
     plt.figure(figsize=(10, 8))
     mask = None
     
-    # Generar gráfico de correlación con seaborn
+    # Generate correlation heatmap
     sns.heatmap(
         corr_df, 
         annot=True, 
@@ -92,10 +92,10 @@ def generate_correlation_plot(rows, method='pearson'):
         cbar_kws={"shrink": .8},
         fmt=".2f"
     )
-    plt.title(f'Matriz de Correlación ({method.capitalize()})')
+    plt.title(f'Correlation Matrix ({method.capitalize()})')
     plt.tight_layout()
     
-    # Convertir a base64 para retornar al cliente
+    # Convert to base64 to return to client
     buf = io.BytesIO()
     plt.savefig(buf, format='png', dpi=100)
     buf.seek(0)
@@ -106,7 +106,7 @@ def generate_correlation_plot(rows, method='pearson'):
 
 def clean_data(rows, config):
     """
-    Aplica estrategias de limpieza de datos según la configuración
+    Applies data cleaning strategies based on the provided configuration.
     """
     try:
         console.log("Starting data cleaning...")
@@ -120,7 +120,7 @@ def clean_data(rows, config):
         df = pd.DataFrame(rows)
         console.log(f"DataFrame shape: {df.shape}")
         
-        # Convertir config de JS object a dict de Python si es necesario
+        # Convert config from JS object to Python dict if necessary
         if hasattr(config, 'to_py'):
             config_dict = config.to_py()
         else:
@@ -128,7 +128,7 @@ def clean_data(rows, config):
         
         console.log(f"Config keys: {list(config_dict.keys())}")
         
-        # Eliminar duplicados si está habilitado
+        # Remove duplicates if enabled
         remove_duplicates = config_dict.get('removeDuplicates', False)
         console.log(f"Remove duplicates: {remove_duplicates}")
         if remove_duplicates:
@@ -136,24 +136,24 @@ def clean_data(rows, config):
             df = df.drop_duplicates()
             console.log(f"Duplicates removed: {initial_rows - len(df)} rows")
         
-        # Filtrar por columnas seleccionadas si están especificadas
+        # Filter by selected columns if specified
         selected_columns = config_dict.get('selectedColumns', [])
         console.log(f"Selected columns: {selected_columns}")
         if selected_columns:
-            # Asegurar que target column esté incluida si existe
+            # Ensure target column is included if it exists
             target_col = config_dict.get('targetColumn')
             if target_col and target_col not in selected_columns:
                 selected_columns = selected_columns + [target_col]
                 console.log(f"Added target column: {target_col}")
             
-            # Filtrar solo columnas que existen en el DataFrame
+            # Filter only existing columns
             available_columns = [col for col in selected_columns if col in df.columns]
             console.log(f"Available columns: {available_columns}")
             if available_columns:
                 df = df[available_columns]
                 console.log(f"DataFrame filtered to shape: {df.shape}")
         
-        # Aplicar filtros categóricos
+        # Apply categorical filters
         categorical_filters = config_dict.get('categoricalFilters', {})
         console.log(f"Categorical filters: {list(categorical_filters.keys())}")
         for col, values in categorical_filters.items():
@@ -162,11 +162,11 @@ def clean_data(rows, config):
                 df = df[df[col].isin(values)]
                 console.log(f"Filtered {col}: {initial_rows - len(df)} rows removed")
         
-        # Obtener tipos de columna personalizados
+        # Get custom column types
         column_types = config_dict.get('columnTypes', {})
         console.log(f"Column types: {column_types}")
         
-        # Aplicar estrategias por columna
+        # Apply per-column strategies
         column_strategies = config_dict.get('columnStrategies', {})
         console.log(f"Column strategies: {list(column_strategies.keys())}")
         
@@ -177,11 +177,11 @@ def clean_data(rows, config):
                 
             console.log(f"Processing column {col} with strategy: {strategy}")
             
-            # Obtener tipo efectivo de la columna
+            # Determine effective column type
             effective_type = column_types.get(col, 'numeric' if pd.api.types.is_numeric_dtype(df[col]) else 'categorical')
             console.log(f"Column {col} effective type: {effective_type}")
             
-            # Aplicar filtros categóricos (antes de otras operaciones)
+            # Apply categorical filtering (before other operations)
             if effective_type == 'categorical':
                 selected_categories = strategy.get('selectedCategories', [])
                 if selected_categories:
@@ -189,28 +189,28 @@ def clean_data(rows, config):
                     df = df[df[col].isin(selected_categories)]
                     console.log(f"Filtered {col} to selected categories: {initial_rows - len(df)} rows removed")
                 
-                # Agrupar categorías raras
+                # Group rare categories
                 if strategy.get('groupRareCategories', False):
                     try:
-                        rare_threshold = strategy.get('rareThreshold', 5) / 100.0  # convertir a decimal
+                        rare_threshold = strategy.get('rareThreshold', 5) / 100.0  # convert to decimal
                         value_counts = df[col].value_counts()
                         total_count = len(df)
                         rare_values = value_counts[value_counts / total_count < rare_threshold].index.tolist()
                         
                         if rare_values:
-                            df[col] = df[col].replace(rare_values, 'Otros')
-                            console.log(f"Grouped {len(rare_values)} rare categories in {col} as 'Otros'")
+                            df[col] = df[col].replace(rare_values, 'Other')
+                            console.log(f"Grouped {len(rare_values)} rare categories in {col} as 'Other'")
                     except Exception as e:
                         console.log(f"Error grouping rare categories in {col}: {str(e)}")
             
-            # Remover nulls
+            # Remove nulls
             if strategy.get('removeNulls', False):
                 initial_rows = len(df)
                 df = df.dropna(subset=[col])
                 console.log(f"Removed nulls from {col}: {initial_rows - len(df)} rows")
                 continue
                 
-            # Remover outliers por cuartiles (solo para columnas tratadas como numéricas)
+            # Remove outliers using quartiles (for numeric columns only)
             if strategy.get('removeOutliers', False) and effective_type == 'numeric':
                 try:
                     if pd.api.types.is_numeric_dtype(df[col]):
@@ -226,7 +226,7 @@ def clean_data(rows, config):
                     console.log(f"Error removing outliers from {col}: {str(e)}")
                 continue
                 
-            # Estrategias de relleno
+            # Fill strategies
             fill_strategy = strategy.get('fillStrategy')
             if fill_strategy and fill_strategy != 'drop':
                 console.log(f"Applying fill strategy {fill_strategy} to {col}")
@@ -293,11 +293,13 @@ def clean_data(rows, config):
         console.log(f"Traceback: {traceback.format_exc()}")
         raise e
 `;
+// Pyodide initialization client and utilities
+// Allows running Python code and converting results to JS objects
 
 export function initPyodide(): PyodideContext & { _pyodide?: any } {
   if (!_ready) {
     _ready = (async () => {
-      // @ts-ignore global loadPyodide cargado en index.html
+      // @ts-ignore global loadPyodide loaded in index.html
       _pyodide = await (window as any).loadPyodide({
         indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.28.3/full/'
       });
@@ -309,24 +311,24 @@ export function initPyodide(): PyodideContext & { _pyodide?: any } {
   }
 
   const runPython = (code: string) => {
-    if (!_pyodide) throw new Error('Pyodide no inicializado todavía');
+    if (!_pyodide) throw new Error('Pyodide not initialized yet');
     return _pyodide.runPython(code);
   };
 
   const loadCSV = async (url: string): Promise<any[]> => {
-    await _ready; // asegurar inicialización
+    await _ready; // ensure initialization
     const resp = await fetch(url);
-    if (!resp.ok) throw new Error('No se pudo cargar CSV: '+resp.status);
+    if (!resp.ok) throw new Error('Could not load CSV: ' + resp.status);
     const text = await resp.text();
-    // Pasar el texto a Python
+    // Pass text to Python
     _pyodide.globals.set('___csv_text', text);
     const rows = await _pyodide.runPythonAsync(`parse_csv(___csv_text)`);
-    return rows.toJs ? rows.toJs({}) : rows; // convertir a objeto JS
+    return rows.toJs ? rows.toJs({}) : rows; // convert to JS object
   };
 
   const parseCSVText = async (text: string): Promise<any[]> => {
     await _ready;
-    if (!_pyodide) throw new Error('Pyodide no inicializado');
+    if (!_pyodide) throw new Error('Pyodide not initialized');
     _pyodide.globals.set('___csv_text_direct', text);
     const rows = await _pyodide.runPythonAsync('parse_csv(___csv_text_direct)');
     return rows.toJs ? rows.toJs({}) : rows;
@@ -334,15 +336,15 @@ export function initPyodide(): PyodideContext & { _pyodide?: any } {
 
   const writeCSVAndParse = async (fileName: string, text: string): Promise<any[]> => {
     await _ready;
-    if (!_pyodide) throw new Error('Pyodide no inicializado');
-    // Escribir el archivo completo en el FS virtual de Pyodide y parsear vía pandas / fallback
+    if (!_pyodide) throw new Error('Pyodide not initialized');
+    // Write the file to Pyodide’s virtual FS and parse it via pandas / fallback
     _pyodide.FS.writeFile(fileName, text);
     const rows = await _pyodide.runPythonAsync(`parse_csv_file('${fileName.replace(/'/g, "")}')`);
     return rows.toJs ? rows.toJs({}) : rows;
   };
 
   const analyzeData = (rows: any[]) => {
-    // Convertir a estructura Python (lista de dict) automáticamente permitida
+    // Automatically converts to Python structure (list of dicts)
     _pyodide.globals.set('___rows', rows);
     const result = _pyodide.runPython(`analyze(___rows)`);
     return result.toJs ? result.toJs({}) : result;
@@ -350,30 +352,30 @@ export function initPyodide(): PyodideContext & { _pyodide?: any } {
   
   const generateCorrelationPlot = async (rows: any[], method: string = 'pearson'): Promise<string> => {
     await _ready;
-    if (!_pyodide) throw new Error('Pyodide no inicializado');
+    if (!_pyodide) throw new Error('Pyodide not initialized');
     _pyodide.globals.set('___correlation_rows', rows);
     _pyodide.globals.set('___correlation_method', method);
     try {
       const result = await _pyodide.runPythonAsync(`generate_correlation_plot(___correlation_rows, ___correlation_method)`);
       return result;
     } catch (error) {
-      console.error('Error generando gráfico de correlación:', error);
-      throw new Error(`Error generando gráfico de correlación: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      console.error('Error generating correlation plot:', error);
+      throw new Error(`Error generating correlation plot: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const cleanData = async (rows: any[], config: any): Promise<any[]> => {
     await _ready;
-    if (!_pyodide) throw new Error('Pyodide no inicializado');
+    if (!_pyodide) throw new Error('Pyodide not initialized');
     
     console.log('📤 Sending data to Python for cleaning...');
     console.log('Rows count:', rows.length);
     console.log('Config object:', config);
     
-    // Convertir explícitamente a objetos Python
+    // Explicitly convert to Python objects
     _pyodide.globals.set('___cleaning_rows', rows);
     
-    // Asegurar que la configuración se convierte correctamente
+    // Ensure configuration is correctly converted
     const configToSend = {
       removeDuplicates: config.removeDuplicates || false,
       selectedColumns: config.selectedColumns || [],
@@ -394,7 +396,7 @@ export function initPyodide(): PyodideContext & { _pyodide?: any } {
       return jsResult;
     } catch (error) {
       console.error('❌ Python error during cleaning:', error);
-      throw new Error(`Error limpiando datos: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      throw new Error(`Error cleaning data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -402,3 +404,4 @@ export function initPyodide(): PyodideContext & { _pyodide?: any } {
 }
 
 export const pyodideContext = initPyodide();
+

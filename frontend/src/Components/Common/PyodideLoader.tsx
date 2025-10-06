@@ -9,10 +9,10 @@ const PyodideLoader: React.FC<PyodideLoaderProps> = ({ visible }) => {
   const { pyodideReady } = useDataStore();
   const [hideLoader, setHideLoader] = useState(false);
   
-  // Efecto para ocultar el loader después de que pyodide esté listo
+  // Effect to hide the loader once Pyodide is ready
   useEffect(() => {
     if (pyodideReady) {
-      // Esperar un poco antes de ocultar por completo para que se vea la transición
+      // Wait a short time before hiding completely for a smooth transition
       const timer = setTimeout(() => setHideLoader(true), 1000);
       return () => clearTimeout(timer);
     }
@@ -22,7 +22,11 @@ const PyodideLoader: React.FC<PyodideLoaderProps> = ({ visible }) => {
 
   return (
     <div className="fixed inset-0 z-[500] flex items-center justify-center pointer-events-none">
-      <div className={`py-4 px-8 rounded-lg border border-cyan-400/50 bg-cyan-900/70 backdrop-blur-md shadow-lg transition-all duration-500 ${pyodideReady ? 'opacity-0 translate-y-[-10px]' : 'opacity-100'}`}>
+      <div
+        className={`py-4 px-8 rounded-lg border border-cyan-400/50 bg-cyan-900/70 backdrop-blur-md shadow-lg transition-all duration-500 ${
+          pyodideReady ? 'opacity-0 translate-y-[-10px]' : 'opacity-100'
+        }`}
+      >
         <div className="flex items-center gap-4">
           <div className="relative">
             <div className="w-8 h-8 rounded-full border-3 border-t-transparent border-cyan-300/70 animate-spin"></div>
@@ -32,10 +36,10 @@ const PyodideLoader: React.FC<PyodideLoaderProps> = ({ visible }) => {
           </div>
           <div>
             <p className="text-cyan-200 font-medium">
-              {pyodideReady ? 'Motor Python listo' : 'Inicializando motor Python...'}
+              {pyodideReady ? 'Python Engine Ready' : 'Initializing Python Engine...'}
             </p>
             <p className="text-cyan-400/60 text-xs mt-1">
-              Preparando el entorno para análisis de datos
+              Preparing the environment for data analysis
             </p>
           </div>
         </div>

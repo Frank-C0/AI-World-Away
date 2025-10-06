@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-// Tipos exportados reutilizables
+// Reusable exported types
 export interface DataRow { [key: string]: any }
 
 export interface ColumnAnalysis {
@@ -20,20 +20,20 @@ export interface DataStats {
   totalNulls: number;
 }
 
-// Para compatibilidad con TanStack Table (solo usado por tablas pero ahora global)
+// Compatibility with TanStack Table (used globally for table visibility)
 export type VisibilityState = { [key: string]: boolean };
 export type Updater<T> = T | ((old: T) => T);
 
-// Configuración de limpieza de datos
+// Data cleaning configuration
 export interface CleaningStrategy {
   removeNulls: boolean;
-  removeOutliers: boolean; // por cuartiles
+  removeOutliers: boolean; // by quartiles
   fillStrategy: 'mean' | 'median' | 'mode' | 'forward' | 'backward' | 'drop';
-  // Para categóricas: filtrar por valores específicos
+  // For categorical: filter by specific values
   selectedCategories?: string[];
-  // Para categóricas: agrupar valores poco frecuentes
+  // For categorical: group rare values
   groupRareCategories?: boolean;
-  rareThreshold?: number; // umbral para considerar categoría como rara (porcentaje)
+  rareThreshold?: number; // percentage threshold to consider a category as rare
 }
 
 export interface ColumnTypeConfig {
@@ -42,27 +42,27 @@ export interface ColumnTypeConfig {
 
 export interface DataCleaningConfig {
   removeDuplicates: boolean;
-  selectedColumns: string[]; // columnas para predicción/análisis
-  targetColumn: string | null; // columna objetivo
-  categoricalFilters: { [column: string]: string[] }; // filtros por categoría
-  columnStrategies: { [column: string]: CleaningStrategy }; // estrategias por columna
-  columnTypes: ColumnTypeConfig; // tipos de columna personalizados
-  isEnabled: boolean; // si está activa la limpieza
+  selectedColumns: string[]; // columns selected for prediction/analysis
+  targetColumn: string | null; // target column
+  categoricalFilters: { [column: string]: string[] }; // filters by category
+  columnStrategies: { [column: string]: CleaningStrategy }; // per-column strategies
+  columnTypes: ColumnTypeConfig; // custom column types
+  isEnabled: boolean; // whether cleaning is enabled
 }
 
 export interface GlobalDataState {
-  data: DataRow[];            // Filas procesadas (puede ser limpia o cruda)
-  rawRows: any | null;        // Copia original (por si se requiere)
-  cleanedRows: DataRow[] | null; // Datos después de limpieza
-  stats: DataStats | null;    // Análisis
-  loading: boolean;           // Cargando dataset o pyodide
-  error: string | null;       // Errores de carga/análisis
-  columnVisibility: VisibilityState; // Preferencias UI tabla
-  pyodideReady: boolean;      // Indica si pyodide terminó init en background
-  cleaningConfig: DataCleaningConfig; // Configuración de limpieza
-  showCleanedData: boolean;   // Ver datos limpios o crudos en tabla
+  data: DataRow[];                 // processed rows (clean or raw)
+  rawRows: any | null;             // original copy (in case needed)
+  cleanedRows: DataRow[] | null;   // data after cleaning
+  stats: DataStats | null;         // analysis
+  loading: boolean;                // loading dataset or pyodide
+  error: string | null;            // loading/analysis errors
+  columnVisibility: VisibilityState; // table UI preferences
+  pyodideReady: boolean;           // indicates if pyodide finished background init
+  cleaningConfig: DataCleaningConfig; // cleaning configuration
+  showCleanedData: boolean;        // toggle between clean/raw data in the table
 
-  // Setters básicos
+  // Basic setters
   setData: (data: DataRow[]) => void;
   setRawRows: (rows: any) => void;
   setStats: (stats: DataStats | null) => void;
@@ -74,14 +74,14 @@ export interface GlobalDataState {
   setShowCleanedData: (show: boolean) => void;
   setCleanedRows: (rows: DataRow[] | null) => void;
 
-  // Utilidades
+  // Utilities
   generateSampleData: () => DataRow[];
   applyDataCleaning: () => Promise<void>;
   initializeColumnTypes: () => void;
   getEffectiveColumnType: (columnName: string) => 'numeric' | 'categorical';
 
-  // Operaciones de carga
-  initPyodideEarly: () => Promise<void>; // pre-carga en background
+  // Loading operations
+  initPyodideEarly: () => Promise<void>; // background pre-load
   loadDataFromCSV: (csvUrl?: string) => Promise<void>;
   loadDataFromFile: (file: File) => Promise<void>;
   loadDataFromText: (csvText: string, virtualName?: string) => Promise<void>;
@@ -133,16 +133,16 @@ export const useDataStore = create<GlobalDataState>((set, get) => ({
   setPyodideReady: (pyodideReady) => set({ pyodideReady }),
 
   generateSampleData: () => [
-    { id: 1, nombre: 'Ana', edad: 45, salario: 5500, ciudad: 'Lima', categoria: 'A', activo: true },
-    { id: 2, nombre: 'Juan', edad: 28, salario: 3200, ciudad: 'Arequipa', categoria: 'B', activo: true },
-    { id: 3, nombre: 'María', edad: 35, salario: 4100, ciudad: 'Cusco', categoria: 'C', activo: false },
-    { id: 4, nombre: 'Pedro', edad: 50, salario: 6000, ciudad: 'Trujillo', categoria: 'A', activo: true },
-    { id: 5, nombre: 'Lucía', edad: 25, salario: 2800, ciudad: 'Lima', categoria: 'B', activo: true },
-    { id: 6, nombre: 'Carlos', edad: 38, salario: 4900, ciudad: 'Arequipa', categoria: 'C', activo: false },
-    { id: 7, nombre: 'Elena', edad: 42, salario: 5200, ciudad: 'Cusco', categoria: 'A', activo: true },
-    { id: 8, nombre: 'Diego', edad: 22, salario: 2500, ciudad: 'Trujillo', categoria: 'B', activo: true },
-    { id: 9, nombre: 'Sofía', edad: 30, salario: 3800, ciudad: 'Lima', categoria: 'C', activo: true },
-    { id: 10, nombre: 'Miguel', edad: 47, salario: 5800, ciudad: 'Arequipa', categoria: 'A', activo: false },
+    { id: 1, name: 'Ana', age: 45, salary: 5500, city: 'Lima', category: 'A', active: true },
+    { id: 2, name: 'Juan', age: 28, salary: 3200, city: 'Arequipa', category: 'B', active: true },
+    { id: 3, name: 'Maria', age: 35, salary: 4100, city: 'Cusco', category: 'C', active: false },
+    { id: 4, name: 'Pedro', age: 50, salary: 6000, city: 'Trujillo', category: 'A', active: true },
+    { id: 5, name: 'Lucia', age: 25, salary: 2800, city: 'Lima', category: 'B', active: true },
+    { id: 6, name: 'Carlos', age: 38, salary: 4900, city: 'Arequipa', category: 'C', active: false },
+    { id: 7, name: 'Elena', age: 42, salary: 5200, city: 'Cusco', category: 'A', active: true },
+    { id: 8, name: 'Diego', age: 22, salary: 2500, city: 'Trujillo', category: 'B', active: true },
+    { id: 9, name: 'Sofia', age: 30, salary: 3800, city: 'Lima', category: 'C', active: true },
+    { id: 10, name: 'Miguel', age: 47, salary: 5800, city: 'Arequipa', category: 'A', active: false },
   ],
 
   initPyodideEarly: async () => {
@@ -153,7 +153,7 @@ export const useDataStore = create<GlobalDataState>((set, get) => ({
       await pyodideContext.ready;
       set({ pyodideReady: true });
     } catch (e) {
-      console.error('Fallo inicializando Pyodide', e);
+      console.error('Failed initializing Pyodide', e);
     }
   },
 
@@ -170,7 +170,7 @@ export const useDataStore = create<GlobalDataState>((set, get) => ({
       setData(rows);
     } catch (err) {
       console.error('Error loading CSV:', err);
-      setError(`Error al cargar el archivo CSV: ${err instanceof Error ? err.message : 'Error desconocido'}`);
+      setError(`Error loading CSV file: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setData(generateSampleData());
     } finally {
       setLoading(false);
@@ -188,15 +188,15 @@ export const useDataStore = create<GlobalDataState>((set, get) => ({
       setLoading(true); setError(null);
       const { pyodideContext } = await import('../pyodideClient');
       await pyodideContext.ready;
-      // Usar nueva función segura (soporta comentarios #)
+      // Use the new safe parser (supports # comments)
       const jsRows = await pyodideContext.parseCSVText(csvText);
       setRawRows(jsRows);
       const analysis = pyodideContext.analyzeData(jsRows) as DataStats;
       setStats(analysis);
       setData(jsRows);
     } catch (err) {
-      console.error('Error procesando CSV directo:', err);
-      setError(`Error procesando el texto CSV (${virtualName}): ${err instanceof Error ? err.message : 'Error desconocido'}`);
+      console.error('Error processing CSV text:', err);
+      setError(`Error processing CSV text (${virtualName}): ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -220,7 +220,7 @@ export const useDataStore = create<GlobalDataState>((set, get) => ({
       
       console.log('✅ Pyodide ready, calling cleanData...');
       
-      // Enviar configuración a Python y aplicar limpieza
+      // Send configuration to Python and apply cleaning
       const cleanedData = await pyodideContext.cleanData(rawRows, cleaningConfig);
       
       console.log('✅ Data cleaning completed');
@@ -228,14 +228,14 @@ export const useDataStore = create<GlobalDataState>((set, get) => ({
       
       setCleanedRows(cleanedData);
       
-      // Si estamos mostrando datos limpios, actualizamos la vista
+      // If showing cleaned data, update the view
       if (showCleanedData) {
         console.log('🔄 Updating view with cleaned data');
         setData(cleanedData);
       }
     } catch (err) {
       console.error('❌ Error applying data cleaning:', err);
-      setError(`Error aplicando limpieza de datos: ${err instanceof Error ? err.message : 'Error desconocido'}`);
+      setError(`Error applying data cleaning: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   },
 
@@ -245,7 +245,7 @@ export const useDataStore = create<GlobalDataState>((set, get) => ({
     
     const columnTypes: ColumnTypeConfig = {};
     stats.columns.forEach(col => {
-      // Si no hay configuración previa, usar el tipo detectado automáticamente
+      // If there’s no previous config, use the automatically detected type
       if (!cleaningConfig.columnTypes[col.name]) {
         columnTypes[col.name] = col.isNumeric ? 'numeric' : 'categorical';
       } else {
@@ -258,7 +258,7 @@ export const useDataStore = create<GlobalDataState>((set, get) => ({
 
   getEffectiveColumnType: (columnName: string) => {
     const { cleaningConfig, stats } = get();
-    // Usar tipo personalizado si existe, sino el detectado automáticamente
+    // Use custom type if defined, otherwise the auto-detected one
     if (cleaningConfig.columnTypes[columnName]) {
       return cleaningConfig.columnTypes[columnName];
     }

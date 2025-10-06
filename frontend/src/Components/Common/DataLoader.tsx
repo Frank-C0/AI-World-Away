@@ -34,7 +34,7 @@ const DataLoader: React.FC = () => {
     <div className="space-y-6 text-sm">
       <div className="p-4 rounded-lg border border-cyan-400/20 bg-cyan-400/5 flex items-center justify-between">
         <div>
-          <p className="text-cyan-100/70 text-xs max-w-md">Carga tus datos CSV para comenzar a explorarlos y visualizarlos.</p>
+          <p className="text-cyan-100/70 text-xs max-w-md">Upload your CSV data to start exploring and visualizing it.</p>
         </div>
         <button
           onClick={loadSample}

@@ -15,7 +15,7 @@ const CorrelationModal: React.FC<CorrelationModalProps> = ({ embedded = false })
   const data = useDataStore(state => state.data);
   const pyodideReady = useDataStore(state => state.pyodideReady);
   
-  // Genera el gráfico de correlación cuando cambian los datos o el método
+  // Generate correlation plot whenever data or method changes
   useEffect(() => {
     const generateCorrelation = async () => {
       if (!data || data.length === 0 || !pyodideReady) return;
@@ -33,8 +33,8 @@ const CorrelationModal: React.FC<CorrelationModalProps> = ({ embedded = false })
           setCorrelationImage(imageData);
         }
       } catch (err) {
-        console.error('Error generando correlación:', err);
-        setError(`Error generando correlación: ${err instanceof Error ? err.message : 'Error desconocido'}`);
+        console.error('Error generating correlation:', err);
+        setError(`Error generating correlation: ${err instanceof Error ? err.message : 'Unknown error'}`);
         setCorrelationImage(null);
       } finally {
         setLoading(false);
@@ -83,9 +83,9 @@ const CorrelationModal: React.FC<CorrelationModalProps> = ({ embedded = false })
         </div>
         <div className="mt-2 text-xs">
           <p className="text-blue-200">
-            <strong>Pearson:</strong> Mide correlación lineal (más común).
-            <strong className="ml-2">Spearman:</strong> Correlación por rangos, útil para relaciones no lineales.
-            <strong className="ml-2">Kendall:</strong> Similar a Spearman pero más robusto a outliers.
+            <strong>Pearson:</strong> Measures linear correlation (most common).
+            <strong className="ml-2">Spearman:</strong> Rank-based correlation, useful for non-linear relationships.
+            <strong className="ml-2">Kendall:</strong> Similar to Spearman but more robust to outliers.
           </p>
         </div>
       </div>
@@ -94,7 +94,7 @@ const CorrelationModal: React.FC<CorrelationModalProps> = ({ embedded = false })
         {loading && (
           <div className="flex flex-col items-center justify-center text-cyan-300">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mb-2"></div>
-            <p>Generando matriz de correlación...</p>
+            <p>Generating correlation matrix...</p>
           </div>
         )}
         
@@ -109,7 +109,7 @@ const CorrelationModal: React.FC<CorrelationModalProps> = ({ embedded = false })
           <div className="w-full h-full flex items-center justify-center p-2">
             <img 
               src={correlationImage} 
-              alt="Matriz de Correlación" 
+              alt="Correlation Matrix" 
               className="max-w-full max-h-full object-contain" 
             />
           </div>
@@ -117,8 +117,8 @@ const CorrelationModal: React.FC<CorrelationModalProps> = ({ embedded = false })
         
         {!correlationImage && !loading && !error && data.length < 3 && (
           <div className="text-cyan-300 text-center">
-            <p>No se pudo generar la matriz de correlación.</p>
-            <p className="text-xs mt-2">Se necesitan al menos dos columnas numéricas para calcular correlaciones.</p>
+            <p>Could not generate the correlation matrix.</p>
+            <p className="text-xs mt-2">At least two numeric columns are required to compute correlations.</p>
           </div>
         )}
       </div>

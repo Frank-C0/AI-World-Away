@@ -57,10 +57,10 @@ function App() {
             {activeModal === 'charts' ? '✕ Charts' : '📈 Charts'}
           </button>
           <button onClick={() => toggleModal('cleaning')} className={activeModal === 'cleaning' ? 'active' : ''} disabled={!stats}>
-            {activeModal === 'cleaning' ? '✕ Limpieza' : '🧹 Limpieza'}
+            {activeModal === 'cleaning' ? '✕ Cleaning' : '🧹 Cleaning'}
           </button>
           <button onClick={() => toggleModal('correlation')} className={activeModal === 'correlation' ? 'active' : ''} disabled={!stats}>
-            {activeModal === 'correlation' ? '✕ Correlación' : '🔄 Correlación'}
+            {activeModal === 'correlation' ? '✕ Correlation' : '🔄 Correlation'}
           </button>
           <button onClick={() => toggleModal('stats')} className={activeModal === 'stats' ? 'active' : ''} disabled={!stats}>
             {activeModal === 'stats' ? '✕ Statistics' : '📑 Statistics'}
@@ -78,10 +78,10 @@ function App() {
         <Graficos />
       </Modal>
       
-      {/* ✅ PANEL: Limpieza de Datos */}
+      {/* ✅ PANEL: Data Cleaning */}
       <Modal 
         id="cleaning" 
-        title="🧹 Limpieza de Datos" 
+        title="🧹 Data Cleaning" 
         widthClass="w-[1000px]" 
         heightClass="max-h-[85vh]"
         onClose={() => {

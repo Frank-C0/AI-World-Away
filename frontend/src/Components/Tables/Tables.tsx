@@ -313,23 +313,27 @@ const Tables: React.FC = () => {
             )}
 
             <details className="relative ml-auto">
-              <summary className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer font-medium text-sm list-none">
-                Columns
-              </summary>
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 max-h-64 overflow-y-auto">
-                {table.getAllLeafColumns().map((col) => (
-                  <label key={col.id} className="flex items-center gap-2 py-1 hover:bg-gray-50 px-2 rounded cursor-pointer text-sm">
-                    <input
-                      type="checkbox"
-                      checked={col.getIsVisible()}
-                      onChange={col.getToggleVisibilityHandler()}
-                      className="rounded"
-                    />
-                    <span>{flexRender(col.columnDef.header, { table, column: col } as any)}</span>
-                  </label>
-                ))}
-              </div>
-            </details>
+            <summary className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg cursor-pointer font-medium text-sm text-cyan-100 list-none">
+              Columns
+            </summary>
+            <div className="absolute right-0 mt-2 w-48 bg-gray-700 border border-gray-700 rounded-lg shadow-lg p-3 z-10 max-h-64 overflow-y-auto">
+              {table.getAllLeafColumns().map((col) => (
+                <label
+                  key={col.id}
+                  className="flex items-center gap-2 py-1 hover:bg-gray-800 px-2 rounded cursor-pointer text-sm text-gray-200"
+                >
+                  <input
+                    type="checkbox"
+                    checked={col.getIsVisible()}
+                    onChange={col.getToggleVisibilityHandler()}
+                    className="rounded accent-cyan-500"
+                  />
+                  <span>{flexRender(col.columnDef.header, { table, column: col } as any)}</span>
+                </label>
+              ))}
+            </div>
+          </details>
+
           </div>
           
           {/* Información adicional sobre el estado de los datos */}
