@@ -115,7 +115,7 @@ const SelectFilter = ({ column, options }: any) => {
       value={(column.getFilterValue() as string) ?? ''}
       onChange={(e) => column.setFilterValue(e.target.value || undefined)}
     >
-      <option value="">Todos</option>
+      <option value="">All</option>
       {options.map((option: string) => (
         <option key={option} value={option}>
           {option}
@@ -225,54 +225,52 @@ const Tables: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-xl font-semibold text-gray-700">Cargando datos...</p>
+          <p className="text-xl font-semibold text-gray-700">Loading data...</p>
         </div>
       </div>
     );
   }
 
   if (!data.length) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 p-6">
-        <div className="text-center max-w-md">
-          <h2 className="text-2xl font-bold text-gray-700 mb-2">No hay datos cargados</h2>
-          <p className="text-gray-600 mb-4 text-sm">
-            Utiliza el modal <span className="font-semibold">"🗂️ Datos"</span> para cargar un archivo CSV, pegar texto o indicar una URL.
-          </p>
-          <button
-            onClick={() => loadDataFromCSV()}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium"
-          >
-            Intentar cargar dataset por defecto
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Tabla Dinámica con Análisis de Datos</h1>
-          <p className="text-gray-600">
-            Datos cargados desde CSV y analizados automáticamente con Pyodide (Python)
-          </p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 p-6">
+      <div className="text-center max-w-md">
+        <h2 className="text-2xl font-bold text-gray-700 mb-2">No data loaded</h2>
+        <p className="text-gray-600 mb-4 text-sm">
+          Use the <span className="font-semibold">"🗂️ Data"</span> modal to upload a CSV file, paste text, or provide a URL.
+        </p>
+        <button
+          onClick={() => loadDataFromCSV()}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium"
+        >
+          Try loading default dataset
+        </button>
+      </div>
+    </div>
+  );
+}
 
-        {error && (
-          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">⚠️</span>
-              <div className="flex-1">
-                <p className="text-yellow-800 font-medium">{error}</p>
-                <p className="text-yellow-700 text-sm mt-1">
-                  Se están mostrando datos de ejemplo. Verifica que el archivo 'final_data.csv' esté en la carpeta pública.
-                </p>
-              </div>
+return (
+  <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
+    <div className="max-w-7xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-4xl font-bold text-gray-800 mb-2">Dynamic Table with Data Analysis</h1>
+        <p className="text-gray-600"></p>
+      </div>
+
+      {error && (
+        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">⚠️</span>
+            <div className="flex-1">
+              <p className="text-yellow-800 font-medium">{error}</p>
+              <p className="text-yellow-700 text-sm mt-1">
+                Example data is being displayed. Please verify that the file 'final_data.csv' is in the public folder.
+              </p>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
         {/* Panel de controles */}
         <div className="bg-white rounded-lg shadow p-4 border border-gray-200 mb-4">
@@ -281,18 +279,18 @@ const Tables: React.FC = () => {
               onClick={resetAllFilters}
               className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium transition text-sm"
             >
-              Limpiar filtros ({table.getState().columnFilters.length})
+              Clean Filters ({table.getState().columnFilters.length})
             </button>
             <button
               onClick={reloadData}
               className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition text-sm"
             >
-              🔄 Recargar Datos
+              🔄 Reload Data
             </button>
 
             <details className="relative ml-auto">
               <summary className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer font-medium text-sm list-none">
-                Columnas
+                Columns
               </summary>
               <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 max-h-64 overflow-y-auto">
                 {table.getAllLeafColumns().map((col) => (
@@ -331,7 +329,7 @@ const Tables: React.FC = () => {
                             {column.getCanFilter() ? (
                               <div className="space-y-1">
                                 <div className="text-[10px] font-normal opacity-80">
-                                  Filtro
+                                  Filter
                                   {column.getIsFiltered() && (
                                     <span className="ml-1 text-yellow-300">✓</span>
                                   )}
@@ -354,7 +352,7 @@ const Tables: React.FC = () => {
                                       onClick={() => column.setFilterValue(undefined)}
                                       className="block w-full text-[10px] text-gray-500 hover:text-gray-700 underline"
                                     >
-                                      Quitar
+                                      Remove
                                     </button>
                                   )}
                                 </div>
@@ -406,25 +404,25 @@ const Tables: React.FC = () => {
           <div className="bg-gray-50 px-4 py-3 border-t border-gray-200">
             <div className="flex items-center justify-between text-sm">
               <div className="text-gray-600">
-                Mostrando {table.getRowModel().rows.length} de {table.getFilteredRowModel().rows.length} registros
+                Showing {table.getRowModel().rows.length} de {table.getFilteredRowModel().rows.length} registers
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
-                  className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 text-sm"
+                  className="px-3 py-1  bg-blue-950 hover:bg-blue-900 disabled:opacity-50 text-sm"
                 >
-                  ← Anterior
+                  ← Back
                 </button>
                 <span className="text-gray-700">
-                  Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}
+                  Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
                 </span>
                 <button
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
-                  className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 text-sm"
+                  className="px-3 py-1 bg-blue-950 hover:bg-blue-900 disabled:opacity-50 text-sm"
                 >
-                  Siguiente →
+                  Next →
                 </button>
               </div>
             </div>
