@@ -1,47 +1,335 @@
+/* Panel de filtros - lado izquierdo */
 .filters-panel {
   position: absolute;
   top: 20px;
   left: 20px;
-  width: 230px;
-  background: rgba(0, 0, 0, 0.65);
-  padding: 15px;
+  width: 280px;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 20px;
   border-radius: 12px;
   color: #00ffff;
   font-family: 'Arial', sans-serif;
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
   z-index: 10;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
 .filters-panel h3 {
-  margin: 0 0 10px;
+  margin: 0 0 20px;
   text-align: center;
-  font-size: 1rem;
+  font-size: 1.2rem;
   color: #0ff;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
 }
 
 .filter-group {
-  margin-bottom: 12px;
+  margin-bottom: 15px;
   display: flex;
   flex-direction: column;
 }
 
 .filter-group label {
-  font-size: 0.9rem;
-  margin-bottom: 4px;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.filter-group label strong {
+  color: #0ff;
+  font-weight: bold;
+}
+
+.filter-range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 2px;
 }
 
 input[type="range"] {
   width: 100%;
   cursor: pointer;
   accent-color: #0ff;
+  height: 6px;
 }
 
 select {
-  background: #000;
+  background: #222;
   color: #0ff;
   border: 1px solid #0ff;
   border-radius: 6px;
-  padding: 4px;
+  padding: 8px;
   cursor: pointer;
+  width: 100%;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+select:hover {
+  background: #333;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+select:focus {
+  outline: none;
+  border-color: #0ff;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+}
+
+.reset-button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 15px;
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid #0ff;
+  border-radius: 8px;
+  color: #0ff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+.reset-button:hover {
+  background: rgba(0, 255, 255, 0.2);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+}
+
+/* Panel de resultados - lado derecho */
+.results-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 20px;
+  border-radius: 10px;
+  color: white;
+  max-width: 320px;
+  max-height: 80vh;
+  overflow-y: auto;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+.results-panel-collapsed {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 255, 255, 0.2);
+  border: 1px solid #0ff;
+  border-radius: 8px;
+  padding: 10px 15px;
+  color: #0ff;
+  cursor: pointer;
+  z-index: 10;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+.results-panel-collapsed:hover {
+  background: rgba(0, 255, 255, 0.3);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.results-header h3 {
+  margin: 0;
+  color: #0ff;
+  font-size: 1.2rem;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: #0ff;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0;
+  transition: all 0.3s;
+}
+
+.close-button:hover {
+  transform: rotate(90deg);
+  color: #ff4d4d;
+}
+
+.stats-total {
+  background: rgba(0, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  text-align: center;
+}
+
+.stats-total-number {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #0ff;
+  margin-bottom: 5px;
+}
+
+.stats-total-label {
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.stats-section {
+  margin-bottom: 20px;
+}
+
+.stats-section h4 {
+  font-size: 0.95rem;
+  color: #0ff;
+  margin-bottom: 10px;
+  margin-top: 0;
+  font-weight: normal;
+}
+
+.stat-bar {
+  margin-bottom: 8px;
+}
+
+.stat-bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  margin-bottom: 3px;
+}
+
+.stat-bar-header span:last-child {
+  font-weight: bold;
+}
+
+.stat-bar-container {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  transition: width 0.3s;
+}
+
+.stat-bar-fill.green {
+  background: #00ff7f;
+}
+
+.stat-bar-fill.yellow {
+  background: #ffff66;
+}
+
+.stat-bar-fill.red {
+  background: #ff4d4d;
+}
+
+.stats-averages {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.stat-item-label {
+  color: #888;
+  font-size: 0.75rem;
+}
+
+.stat-item-value {
+  color: #0ff;
+  font-weight: bold;
+}
+
+.results-list {
+  margin-top: 15px;
+}
+
+.results-list-scroll {
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 0.8rem;
+}
+
+.result-item {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px;
+  border-radius: 5px;
+  margin-bottom: 8px;
+  border-left-width: 3px;
+  border-left-style: solid;
+}
+
+.result-item.green {
+  border-left-color: #00ff7f;
+}
+
+.result-item.yellow {
+  border-left-color: #ffff66;
+}
+
+.result-item.red {
+  border-left-color: #ff4d4d;
+}
+
+.result-item-name {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.result-item-details {
+  color: #aaa;
+}
+
+.results-more {
+  text-align: center;
+  color: #888;
+  margin-top: 10px;
+  font-size: 0.75rem;
+}
+
+/* Scrollbar personalizado */
+.filters-panel::-webkit-scrollbar,
+.results-panel::-webkit-scrollbar,
+.results-list-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.filters-panel::-webkit-scrollbar-track,
+.results-panel::-webkit-scrollbar-track,
+.results-list-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.filters-panel::-webkit-scrollbar-thumb,
+.results-panel::-webkit-scrollbar-thumb,
+.results-list-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.filters-panel::-webkit-scrollbar-thumb:hover,
+.results-panel::-webkit-scrollbar-thumb:hover,
+.results-list-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 255, 0.5);
 }
