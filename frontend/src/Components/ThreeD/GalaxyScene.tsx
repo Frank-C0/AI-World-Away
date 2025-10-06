@@ -65,6 +65,7 @@ const Galaxy: React.FC = () => {
           count={points.length / 3}
           array={points}
           itemSize={3}
+          args={[points, 3]}
         />
       </bufferGeometry>
       <pointsMaterial size={0.1} color="white" />

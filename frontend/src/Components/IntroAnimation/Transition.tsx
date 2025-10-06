@@ -5,12 +5,17 @@ import * as THREE from 'three';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine } from 'recharts';
 import './Transition.css';
 
-const RealisticStar = ({ brightness, phase }) => {
-  const meshRef = useRef(null);
-  const coronaRef = useRef(null);
-  const glowRef = useRef(null);
-  const flareRef = useRef(null);
-  const sunspotGroupRef = useRef(null);
+interface RealisticStarProps {
+  brightness: number;
+  phase: number;
+}
+
+const RealisticStar: React.FC<RealisticStarProps> = ({ brightness, phase }) => {
+  const meshRef = useRef<THREE.Mesh<THREE.SphereGeometry, THREE.MeshStandardMaterial>>(null);
+  const coronaRef = useRef<THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>>(null);
+  const glowRef = useRef<THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>>(null);
+  const flareRef = useRef<THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>>(null);
+  const sunspotGroupRef = useRef<THREE.Group>(null);
   
   useFrame(({ clock }) => {
     const time = clock.getElapsedTime();
@@ -140,11 +145,22 @@ const RealisticStar = ({ brightness, phase }) => {
   );
 };
 
-const DetailedPlanet = ({ color, radius, orbitRadius, speed, onTransit, planetType = 'rocky', atmosphereColor, hasRings = false }) => {
-  const meshRef = useRef(null);
-  const atmosphereRef = useRef(null);
-  const cloudsRef = useRef(null);
-  const ringsRef = useRef(null);
+interface DetailedPlanetProps {
+  color: string;
+  radius: number;
+  orbitRadius: number;
+  speed: number;
+  onTransit?: (isTransiting: boolean, x: number, z: number) => void;
+  planetType?: 'rocky' | 'gas';
+  atmosphereColor?: string;
+  hasRings?: boolean;
+}
+
+const DetailedPlanet: React.FC<DetailedPlanetProps> = ({ color, radius, orbitRadius, speed, onTransit, planetType = 'rocky', atmosphereColor, hasRings = false }) => {
+  const meshRef = useRef<THREE.Mesh<THREE.SphereGeometry, THREE.MeshStandardMaterial>>(null);
+  const atmosphereRef = useRef<THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>>(null);
+  const cloudsRef = useRef<THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>>(null);
+  const ringsRef = useRef<THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>>(null);
   
   useFrame(({ clock }) => {
     if (meshRef.current) {
@@ -230,7 +246,13 @@ const DetailedPlanet = ({ color, radius, orbitRadius, speed, onTransit, planetTy
   );
 };
 
-const EnhancedOrbitLine = ({ radius, color = "#0960E1", opacity = 0.3 }) => {
+interface EnhancedOrbitLineProps {
+  radius: number;
+  color?: string;
+  opacity?: number;
+}
+
+const EnhancedOrbitLine: React.FC<EnhancedOrbitLineProps> = ({ radius, color = "#0960E1", opacity = 0.3 }) => {
   const points = [];
   const segments = 256;
   
@@ -251,6 +273,7 @@ const EnhancedOrbitLine = ({ radius, color = "#0960E1", opacity = 0.3 }) => {
           count={points.length}
           array={new Float32Array(points.flatMap(p => [p.x, p.y, p.z]))}
           itemSize={3}
+          args={[new Float32Array(points.flatMap(p => [p.x, p.y, p.z])), 3]}
         />
       </bufferGeometry>
       <lineBasicMaterial 
@@ -265,7 +288,7 @@ const EnhancedOrbitLine = ({ radius, color = "#0960E1", opacity = 0.3 }) => {
 };
 
 const SpaceDust = () => {
-  const particlesRef = useRef();
+  const particlesRef = useRef<THREE.Points>(null);
   const particleCount = 300;
   
   const positions = new Float32Array(particleCount * 3);
@@ -301,12 +324,14 @@ const SpaceDust = () => {
           count={particleCount}
           array={positions}
           itemSize={3}
+          args={[positions, 3]}
         />
         <bufferAttribute
           attach="attributes-color"
           count={particleCount}
           array={colors}
           itemSize={3}
+          args={[colors, 3]}
         />
       </bufferGeometry>
       <pointsMaterial 
@@ -321,7 +346,11 @@ const SpaceDust = () => {
   );
 };
 
-const CameraController = ({ targetPosition }) => {
+interface CameraControllerProps {
+  targetPosition: number[];
+}
+
+const CameraController: React.FC<CameraControllerProps> = ({ targetPosition }) => {
   const { camera } = useThree();
   const currentPos = useRef(camera.position.clone());
 
@@ -334,11 +363,17 @@ const CameraController = ({ targetPosition }) => {
   return null;
 };
 
-const TransitScene = ({ phase, onBrightnessChange, onPlanetPosition }) => {
+interface TransitSceneProps {
+  phase: number;
+  onBrightnessChange: (brightness: number) => void;
+  onPlanetPosition: (x: number, z: number, depth: number) => void;
+}
+
+const TransitScene: React.FC<TransitSceneProps> = ({ phase, onBrightnessChange, onPlanetPosition }) => {
   const [brightness, setBrightness] = useState(1.0);
   const [transitDepth, setTransitDepth] = useState(0);
   
-  const handleTransit = (isTransiting, x, z) => {
+  const handleTransit = (isTransiting: boolean, x: number, z: number) => {
     if (isTransiting) {
       const distanceFromCenter = Math.sqrt(x * x + z * z);
       const maxDistance = 2.5;
@@ -386,7 +421,6 @@ const TransitScene = ({ phase, onBrightnessChange, onPlanetPosition }) => {
                 orbitRadius={7}
                 speed={0.3}
                 onTransit={handleTransit}
-                phase={phase}
                 planetType="gas"
                 atmosphereColor="#0960E1"
                 hasRings={true}
@@ -486,10 +520,21 @@ const TransitScene = ({ phase, onBrightnessChange, onPlanetPosition }) => {
   );
 };
 
-const Transition = ({ isOpen, onClose }) => {
+interface TransitionProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const Transition: React.FC<TransitionProps> = ({ isOpen, onClose }) => {
   const [phase, setPhase] = useState(0);
   const [brightness, setBrightness] = useState(1.0);
-  const [lightCurveData, setLightCurveData] = useState([]);
+  interface LightCurveDataPoint {
+    time: number;
+    brightness: number;
+    expected: number;
+  }
+
+  const [lightCurveData, setLightCurveData] = useState<LightCurveDataPoint[]>([]);
   const [planetPosition, setPlanetPosition] = useState({ x: 7, z: 0, depth: 0 });
   const [cameraPos, setCameraPos] = useState([0, 8, 20]);
   const [analysisProgress, setAnalysisProgress] = useState(0);
@@ -554,7 +599,7 @@ const Transition = ({ isOpen, onClose }) => {
   }, [phase]);
   
   useEffect(() => {
-    const cameraPositions = {
+    const cameraPositions: Record<number, [number, number, number]> = {
       0: [0, 8, 20],
       1: [0, 6, 18],
       2: [0, 5, 15],
@@ -649,7 +694,7 @@ const Transition = ({ isOpen, onClose }) => {
         
         <div className="animation-container">
           <Canvas 
-            camera={{ position: cameraPos, fov: 45 }}
+            camera={{ position: cameraPos as [number, number, number], fov: 45 }}
             gl={{ antialias: true, alpha: true }}
           >
             <color attach="background" args={['#000000']} />
