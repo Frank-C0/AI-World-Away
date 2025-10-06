@@ -12,6 +12,7 @@ import {
 
 import { useDataStore } from '../../store/dataStore';
 import type { DataRow } from '../../store/dataStore';
+import DataSelector from '../Common/DataSelector';
 
 // === 🔹 Mapeo de nombres legibles para las columnas ===
 const COLUMN_LABELS: Record<string, string> = {
@@ -158,9 +159,6 @@ const Tables: React.FC = () => {
     columnVisibility,
     setColumnVisibility,
     loadDataFromCSV,
-    showCleanedData,
-    setShowCleanedData,
-    cleanedRows,
     cleaningConfig
   } = useDataStore();
 
@@ -298,19 +296,8 @@ const Tables: React.FC = () => {
               🔄 Reload Data
             </button>
             
-            {/* Toggle para datos limpios/crudos */}
-            {cleaningConfig.isEnabled && cleanedRows && (
-              <button
-                onClick={() => setShowCleanedData(!showCleanedData)}
-                className={`px-4 py-2 rounded-lg font-medium transition text-sm ${
-                  showCleanedData 
-                    ? 'bg-green-100 hover:bg-green-200 text-green-700' 
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                }`}
-              >
-                {showCleanedData ? '🧹 Datos Limpios' : '📄 Datos Crudos'}
-              </button>
-            )}
+            {/* Selector de datos mejorado */}
+            <DataSelector size="md" />
 
             <details className="relative ml-auto">
               <summary className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer font-medium text-sm list-none">
@@ -332,28 +319,23 @@ const Tables: React.FC = () => {
             </details>
           </div>
           
-          {/* Información adicional sobre el estado de los datos */}
+          {/* Información adicional sobre la configuración */}
           {cleaningConfig.isEnabled && (
             <div className="mt-3 pt-3 border-t border-gray-200">
               <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span>
-                  📊 Datos originales: {data.length} filas
-                </span>
-                {cleanedRows && (
-                  <span>
-                    🧹 Datos limpios: {cleanedRows.length} filas
-                  </span>
-                )}
                 {cleaningConfig.selectedColumns.length > 0 && (
-                  <span>
-                    📋 Columnas seleccionadas: {cleaningConfig.selectedColumns.length}
+                  <span className="flex items-center gap-1">
+                    📋 <strong>Columnas seleccionadas:</strong> {cleaningConfig.selectedColumns.length}
                   </span>
                 )}
                 {cleaningConfig.targetColumn && (
-                  <span>
-                    🎯 Objetivo: {cleaningConfig.targetColumn}
+                  <span className="flex items-center gap-1">
+                    🎯 <strong>Variable objetivo:</strong> {cleaningConfig.targetColumn}
                   </span>
                 )}
+                <span className="flex items-center gap-1">
+                  🧹 <strong>Estrategias configuradas:</strong> {Object.keys(cleaningConfig.columnStrategies).length}
+                </span>
               </div>
             </div>
           )}

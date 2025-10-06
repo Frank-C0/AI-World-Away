@@ -8,7 +8,8 @@ export interface PyodideContext {
   analyzeData: (rows: any[]) => any;
   parseCSVText: (text: string) => Promise<any[]>;
   writeCSVAndParse: (fileName: string, text: string) => Promise<any[]>;
-  generateCorrelationPlot: (rows: any[], method?: string) => Promise<string>;
+  generateCorrelationPlot: (rows: any[], method?: string, sizeMultiplier?: number) => Promise<string>;
+  calculateTargetCorrelations: (rows: any[], targetColumn: string, method?: string) => Promise<any[]>;
   cleanData: (rows: any[], config: any) => Promise<any[]>;
 }
 
@@ -55,10 +56,49 @@ def analyze(rows):
         })
     return {'shape': [len(df), len(df.columns)], 'columns': col_meta, 'totalNulls': total_nulls}
 
-def generate_correlation_plot(rows, method='pearson'):
+def calculate_target_correlations(rows, target_column, method='pearson'):
+    """
+    Calcula las correlaciones de todas las columnas numéricas con la variable objetivo
+    """
+    if not rows or not target_column:
+        return []
+    
+    df = pd.DataFrame(rows)
+    
+    if target_column not in df.columns:
+        return []
+    
+    # Filtrar solo columnas numéricas
+    numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+    
+    if target_column not in numeric_cols:
+        return []
+    
+    correlations = []
+    target_series = df[target_column]
+    
+    for col in numeric_cols:
+        if col != target_column:
+            try:
+                corr_value = target_series.corr(df[col], method=method)
+                if not pd.isna(corr_value):
+                    correlations.append({
+                        'column': col,
+                        'correlation': float(corr_value),
+                        'abs_correlation': abs(float(corr_value))
+                    })
+            except:
+                continue
+    
+    # Ordenar por correlación absoluta descendente
+    correlations.sort(key=lambda x: x['abs_correlation'], reverse=True)
+    return correlations
+
+def generate_correlation_plot(rows, method='pearson', figsize_multiplier=1.0):
     """
     Genera un gráfico de correlación usando seaborn y lo devuelve como una imagen base64
     methods: 'pearson', 'kendall', 'spearman'
+    figsize_multiplier: factor para ajustar el tamaño de la imagen
     """
     import matplotlib.pyplot as plt
     import seaborn as sns
@@ -74,30 +114,71 @@ def generate_correlation_plot(rows, method='pearson'):
     # Calcular matriz de correlación
     corr_df = df[numeric_cols].corr(method=method)
     
+    # Tamaño automático más inteligente
+    n_cols = len(numeric_cols)
+    
+    # Tamaño base escalado inteligentemente
+    if n_cols <= 5:
+        base_size = 8
+    elif n_cols <= 10:
+        base_size = 10
+    elif n_cols <= 15:
+        base_size = 12
+    else:
+        base_size = 14
+    
+    # Aplicar multiplicador pero con límites sensatos
+    final_size = base_size * figsize_multiplier
+    final_size = max(6, min(20, final_size))  # Entre 6 y 20 pulgadas
+    
+    figsize = (final_size, final_size)
+    
     # Crear figura
-    plt.figure(figsize=(10, 8))
-    mask = None
+    plt.figure(figsize=figsize)
+    
+    # Tamaño de fuente automático basado en número de columnas
+    if n_cols <= 8:
+        annot_size = 10
+        title_size = 14
+    elif n_cols <= 12:
+        annot_size = 8
+        title_size = 12
+    elif n_cols <= 20:
+        annot_size = 7
+        title_size = 11
+    else:
+        annot_size = 6
+        title_size = 10
     
     # Generar gráfico de correlación con seaborn
     sns.heatmap(
         corr_df, 
         annot=True, 
-        mask=mask,
         cmap='coolwarm', 
         vmin=-1, 
         vmax=1, 
         center=0,
         square=True, 
-        linewidths=.5, 
-        cbar_kws={"shrink": .8},
-        fmt=".2f"
+        linewidths=0.5, 
+        cbar_kws={"shrink": 0.8},
+        fmt=".2f",
+        annot_kws={'size': annot_size}
     )
-    plt.title(f'Matriz de Correlación ({method.capitalize()})')
+    
+    plt.title(f'Matriz de Correlación ({method.capitalize()})', fontsize=title_size, pad=20)
     plt.tight_layout()
+    
+    # DPI automático para balancear calidad y tamaño de archivo
+    if n_cols <= 10:
+        dpi = 120
+    elif n_cols <= 15:
+        dpi = 110
+    else:
+        dpi = 100
     
     # Convertir a base64 para retornar al cliente
     buf = io.BytesIO()
-    plt.savefig(buf, format='png', dpi=100)
+    plt.savefig(buf, format='png', dpi=int(dpi), bbox_inches='tight', facecolor='white')
     buf.seek(0)
     img_base64 = base64.b64encode(buf.read()).decode('utf-8')
     plt.close()
@@ -348,17 +429,33 @@ export function initPyodide(): PyodideContext & { _pyodide?: any } {
     return result.toJs ? result.toJs({}) : result;
   };
   
-  const generateCorrelationPlot = async (rows: any[], method: string = 'pearson'): Promise<string> => {
+  const generateCorrelationPlot = async (rows: any[], method: string = 'pearson', sizeMultiplier: number = 1.0): Promise<string> => {
     await _ready;
     if (!_pyodide) throw new Error('Pyodide no inicializado');
     _pyodide.globals.set('___correlation_rows', rows);
     _pyodide.globals.set('___correlation_method', method);
+    _pyodide.globals.set('___size_multiplier', sizeMultiplier);
     try {
-      const result = await _pyodide.runPythonAsync(`generate_correlation_plot(___correlation_rows, ___correlation_method)`);
+      const result = await _pyodide.runPythonAsync(`generate_correlation_plot(___correlation_rows, ___correlation_method, ___size_multiplier)`);
       return result;
     } catch (error) {
       console.error('Error generando gráfico de correlación:', error);
       throw new Error(`Error generando gráfico de correlación: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
+  };
+
+  const calculateTargetCorrelations = async (rows: any[], targetColumn: string, method: string = 'pearson'): Promise<any[]> => {
+    await _ready;
+    if (!_pyodide) throw new Error('Pyodide no inicializado');
+    _pyodide.globals.set('___target_rows', rows);
+    _pyodide.globals.set('___target_column', targetColumn);
+    _pyodide.globals.set('___target_method', method);
+    try {
+      const result = await _pyodide.runPythonAsync(`calculate_target_correlations(___target_rows, ___target_column, ___target_method)`);
+      return result.toJs ? result.toJs({}) : result;
+    } catch (error) {
+      console.error('Error calculating target correlations:', error);
+      return [];
     }
   };
 
@@ -398,7 +495,7 @@ export function initPyodide(): PyodideContext & { _pyodide?: any } {
     }
   };
 
-  return { ready: _ready, runPython, loadCSV, analyzeData, parseCSVText, writeCSVAndParse, generateCorrelationPlot, cleanData, _pyodide } as any;
+  return { ready: _ready, runPython, loadCSV, analyzeData, parseCSVText, writeCSVAndParse, generateCorrelationPlot, calculateTargetCorrelations, cleanData, _pyodide } as any;
 }
 
 export const pyodideContext = initPyodide();
